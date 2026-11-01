@@ -181,4 +181,24 @@ export const VoiceAttendanceModal = ({
           </div>
         </div>
 
-        
+    
+
+            {/* File Upload Alternative */}
+        <div className="relative flex items-center justify-center border-t border-slate-800 pt-4">
+          <span className="absolute -top-2.5 bg-slate-900 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            or upload recorded audio
+          </span>
+        </div>
+
+        <div>
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-700 bg-slate-950/60 p-3 text-xs font-medium text-slate-300 transition hover:border-indigo-500 hover:text-white">
+            <Upload className="h-4 w-4 text-indigo-400" />
+            <span>Select audio file (.wav, .mp3, .webm)</span>
+            <input
+              type="file"
+              accept="audio/*"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
+          </label>
+        </div>
