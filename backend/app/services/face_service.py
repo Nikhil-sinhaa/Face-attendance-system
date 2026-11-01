@@ -54,4 +54,61 @@ def image_bytes_to_numpy(image_bytes: bytes) -> np.ndarray:
     except Exception as e:
         raise ValueError(f"Invalid image format or corrupt file: {e}")
 
+
+def match_embedding_to_candidates(
+    encoding: np.ndarray,
+    candidates: List[Dict[str, Any]],
+    threshold: float = 0.55
+) -> Optional[Tuple[int, float]]:
+    """
+    Match a 128D face descriptor to candidate student profiles.
+    Returns (student_id, distance) if distance <= threshold, else None.
+    """
+    best_student_id = None
+    min_distance = float("inf")
+
+    # If 2 or more candidates exist, train/check SVM as secondary classifier
+    clf = None
+    X_train, y_train = [], []
+    for c in candidates:
+        emb = c.get("face_embedding")
+        if emb:
+            X_train.append(np.array(emb, dtype=np.float64))
+            y_train.append(int(c["student_id"]))
+
+    if len(set(y_train)) >= 2:
+        try:
+            clf = SVC(kernel="linear", class_weight="balanced")
+            clf.fit(X_train, y_train)
+        except Exception:
+            clf = None
+
+    # Compute Euclidean distance across all candidate embeddings
+    for c in candidates:
+        emb = c.get("face_embedding")
+        if not emb:
+            continue
+        candidate_vec = np.array(emb, dtype=np.float64)
+        dist = float(np.linalg.norm(candidate_vec - encoding))
+        if dist < min_distance:
+            min_distance = dist
+            best_student_id = int(c["student_id"])
+
+    # If SVM is available and predicts a valid class, verify agreement
+    if clf is not None and best_student_id is not None:
+        try:
+            predicted_svm = int(clf.predict([encoding])[0])
+            # If SVM prediction matches or has acceptable distance, accept
+            if predicted_svm in y_train:
+                svm_idx = y_train.index(predicted_svm)
+                svm_dist = float(np.linalg.norm(X_train[svm_idx] - encoding))
+                if svm_dist <= threshold and svm_dist < min_distance * 1.05:
+                    min_distance = svm_dist
+                    best_student_id = predicted_svm
+        except Exception:
+            pass
+
+    if min_distance <= threshold and best_student_id is not None:
+        return best_student_id, min_distance
+    return None
     
