@@ -202,3 +202,24 @@ export const VoiceAttendanceModal = ({
             />
           </label>
         </div>
+
+
+                {/* Modal Action Buttons */}
+        <div className="flex items-center justify-between border-t border-slate-800 pt-4">
+          <Button variant="ghost" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={handleAnalyze}
+            disabled={!audioBlob}
+            loading={loading}
+            icon={Volume2}
+          >
+            Analyze Audio
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
