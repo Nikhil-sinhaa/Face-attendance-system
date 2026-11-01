@@ -10,4 +10,9 @@ class AttendanceCandidateResult(BaseModel):
     is_present: bool
     has_voice_profile: Optional[bool] = None
 
-    
+
+    class FaceRecognitionResponse(BaseModel):
+    subject_id: int
+    total_enrolled: int
+    total_faces_found: int
+    candidates: List[AttendanceCandidateResult]
