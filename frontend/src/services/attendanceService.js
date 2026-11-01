@@ -44,4 +44,13 @@ export const attendanceService = {
     return res.data
   },
 
-  
+    async getTeacherAttendanceHistory() {
+    const res = await api.get('/attendance/teacher')
+    return res.data
+  },
+
+  async getMyAttendanceHistory() {
+    const res = await api.get('/attendance/students/me')
+    return res.data
+  },
+}
