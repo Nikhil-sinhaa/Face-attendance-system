@@ -153,3 +153,38 @@ def recognize_faces_in_images(
         "total_faces_found": total_faces_found,
     }
     
+
+
+def identify_student_for_login(
+    image_bytes: bytes,
+    all_students: List[Dict[str, Any]],
+    threshold: Optional[float] = None
+) -> Tuple[Optional[Dict[str, Any]], int, str]:
+    """
+    Single-face authentication for student login.
+    Returns (student_or_none, num_faces, message).
+    """
+    if threshold is None:
+        threshold = settings.FACE_RESEMBLANCE_THRESHOLD
+
+    img_np = image_bytes_to_numpy(image_bytes)
+    encodings = extract_face_embeddings(img_np)
+
+    num_faces = len(encodings)
+    if num_faces == 0:
+        return None, 0, "No face detected in the frame. Please look directly at the camera."
+    if num_faces > 1:
+        return None, num_faces, "Multiple faces detected. Please ensure only you are visible."
+
+    candidates = [
+        s for s in all_students
+        if s.get("face_embedding") and len(s["face_embedding"]) == 128
+    ]
+
+    match = match_embedding_to_candidates(encodings[0], candidates, threshold=threshold)
+    if match:
+        sid, _ = match
+        student = next((s for s in all_students if s["student_id"] == sid), None)
+        return student, 1, "Face recognized successfully."
+
+    return None, 1, "Face not recognized. You may need to create an account."
