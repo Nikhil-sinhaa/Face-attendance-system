@@ -122,4 +122,48 @@ export const AddPhotosModal = ({ isOpen, onClose, photos, setPhotos }) => {
         )}
 
 
+              {/* Thumbnail Gallery */}
+        {photos.length > 0 && (
+          <div className="border-t border-slate-800 pt-4">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Added Photos ({photos.length})
+              </span>
+              <button
+                type="button"
+                onClick={() => setPhotos([])}
+                className="text-xs text-red-400 hover:underline"
+              >
+                Clear all
+              </button>
+            </div>
+            <div className="grid grid-cols-4 gap-2.5 max-h-48 overflow-y-auto p-1">
+              {photos.map((photo, index) => (
+                <div
+                  key={index}
+                  className="group relative aspect-video overflow-hidden rounded-xl border border-slate-800 bg-slate-950"
+                >
+                  <img
+                    src={photo.previewUrl}
+                    alt={`Classroom ${index + 1}`}
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-slate-950/60 opacity-0 transition group-hover:opacity-100 flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhoto(index)}
+                      className="rounded-lg bg-red-600/80 p-1.5 text-white hover:bg-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <span className="absolute bottom-1 left-1 rounded bg-slate-900/90 px-1.5 py-0.5 text-[10px] font-bold text-slate-300">
+                    #{index + 1}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         
