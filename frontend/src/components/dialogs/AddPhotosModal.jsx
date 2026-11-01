@@ -44,4 +44,82 @@ export const AddPhotosModal = ({ isOpen, onClose, photos, setPhotos }) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index))
   }
 
-  
+    return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Capture or Upload Classroom Photos"
+      subtitle="Add photos to scan and identify enrolled students"
+      maxWidth="max-w-2xl"
+    >
+      <div className="space-y-5">
+        {/* Tab Toggle */}
+        <div className="flex rounded-xl border border-slate-800 bg-slate-950 p-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab('camera')}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold transition ${
+              activeTab === 'camera'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Camera className="h-4 w-4" />
+            <span>Camera</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('upload')}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold transition ${
+              activeTab === 'upload'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Upload className="h-4 w-4" />
+            <span>Upload Photos</span>
+          </button>
+        </div>
+
+        {/* Camera Tab Content */}
+        {activeTab === 'camera' && (
+          <div className="flex flex-col items-center">
+            <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-slate-800 bg-black shadow-inner">
+              <Webcam
+                audio={false}
+                ref={webcamRef}
+                screenshotFormat="image/jpeg"
+                videoConstraints={{ facingMode: 'user', width: 1280, height: 720 }}
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="mt-3 w-full">
+              <Button variant="secondary" onClick={handleCapture} className="w-full" icon={Camera}>
+                Take Photo
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Upload Tab Content */}
+        {activeTab === 'upload' && (
+          <label className="flex aspect-video w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-700 bg-slate-950/60 p-6 transition hover:border-indigo-500 hover:bg-slate-950">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-400">
+              <Upload className="h-7 w-7" />
+            </div>
+            <p className="mt-3 text-sm font-semibold text-slate-200">
+              Click to browse or drag &amp; drop photos
+            </p>
+            <p className="mt-1 text-xs text-slate-500">Supports JPG, PNG, WEBP (Multiple files allowed)</p>
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
+          </label>
+        )}
+
+
+        
