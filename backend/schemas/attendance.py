@@ -23,3 +23,20 @@ class AttendanceCandidateResult(BaseModel):
     segments_processed: int
     warning: Optional[str] = None
     candidates: List[AttendanceCandidateResult]
+
+
+    class AttendanceLogItem(BaseModel):
+    student_id: int
+    is_present: bool
+
+
+class AttendanceConfirmRequest(BaseModel):
+    subject_id: int
+    timestamp: Optional[str] = None
+    logs: List[AttendanceLogItem]
+
+
+class AttendanceConfirmResponse(BaseModel):
+    message: str
+    count: int
+    session_timestamp: str
