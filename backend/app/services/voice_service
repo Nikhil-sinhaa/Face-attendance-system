@@ -17,3 +17,10 @@ def _voice_dependencies():
         ) from exc
     return librosa, VoiceEncoder, preprocess_wav
 
+def get_voice_encoder() -> Any:
+    """Lazy-load and cache the VoiceEncoder model."""
+    global _voice_encoder
+    if _voice_encoder is None:
+        _, VoiceEncoder, _ = _voice_dependencies()
+        _voice_encoder = VoiceEncoder()
+    return _voice_encoder
