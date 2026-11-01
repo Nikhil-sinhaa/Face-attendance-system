@@ -111,4 +111,45 @@ def match_embedding_to_candidates(
     if min_distance <= threshold and best_student_id is not None:
         return best_student_id, min_distance
     return None
+
+
+def recognize_faces_in_images(
+    images_bytes_list: List[bytes],
+    enrolled_students: List[Dict[str, Any]],
+    threshold: Optional[float] = None
+) -> Dict[str, Any]:
+    """
+    Process classroom photos and return detected student IDs and sources.
+    """
+    if threshold is None:
+        threshold = settings.FACE_RESEMBLANCE_THRESHOLD
+
+    all_detected_ids: Dict[int, List[str]] = {}
+    total_faces_found = 0
+
+    candidates = [
+        s for s in enrolled_students
+        if s.get("face_embedding") and len(s["face_embedding"]) == 128
+    ]
+
+    for idx, img_bytes in enumerate(images_bytes_list):
+        photo_label = f"Photo {idx + 1}"
+        try:
+            img_np = image_bytes_to_numpy(img_bytes)
+            encodings = extract_face_embeddings(img_np)
+            total_faces_found += len(encodings)
+
+            for enc in encodings:
+                match = match_embedding_to_candidates(enc, candidates, threshold=threshold)
+                if match:
+                    sid, _ = match
+                    all_detected_ids.setdefault(sid, []).append(photo_label)
+        except Exception as e:
+            # Continue processing remaining photos
+            continue
+
+    return {
+        "detected_student_ids": all_detected_ids,
+        "total_faces_found": total_faces_found,
+    }
     
