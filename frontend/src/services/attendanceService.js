@@ -31,4 +31,17 @@ export const attendanceService = {
     return res.data
   },
 
+    async confirmAttendanceSession(subjectId, logs, timestamp = null) {
+    const payload = {
+      subject_id: subjectId,
+      timestamp: timestamp || new Date().toISOString(),
+      logs: logs.map((l) => ({
+        student_id: l.student_id,
+        is_present: Boolean(l.is_present),
+      })),
+    }
+    const res = await api.post('/attendance/sessions/confirm', payload)
+    return res.data
+  },
+
   
