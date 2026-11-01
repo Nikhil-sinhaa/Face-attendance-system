@@ -76,3 +76,70 @@ async def recognize_face_attendance(
         total_faces_found=rec_result["total_faces_found"],
         candidates=candidates,
     )
+
+@router.post("/voice/process", response_model=VoiceRecognitionResponse)
+async def process_voice_attendance(
+    subject_id: int = Form(...),
+    audio_file: UploadFile = File(...),
+    teacher: UserPayload = Depends(require_teacher),
+):
+    # 1. Verify subject
+    subject = supabase_service.get_subject_by_id(subject_id)
+    if not subject:
+        raise HTTPException(status_code=404, detail="Subject not found.")
+    if subject["teacher_id"] != teacher.id:
+        raise HTTPException(status_code=403, detail="Not authorized for this subject.")
+
+    enrolled_students = supabase_service.get_enrolled_students(subject_id)
+    if not enrolled_students:
+        raise HTTPException(status_code=400, detail="No students are enrolled in this subject.")
+
+    # 2. Read audio bytes
+    audio_bytes = await audio_file.read()
+    if not audio_bytes or len(audio_bytes) < 1000:
+        raise HTTPException(status_code=400, detail="Audio recording is empty or too short.")
+
+    # 3. Process bulk audio
+    try:
+        rec_result = voice_service.process_bulk_audio_attendance(
+            audio_bytes, enrolled_students
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to process audio: {e}")
+
+    detected_scores = rec_result["detected_scores"]
+    candidates: List[AttendanceCandidateResult] = []
+
+    for s in enrolled_students:
+        sid = s["student_id"]
+        has_voice = bool(s.get("voice_embedding") and len(s["voice_embedding"]) == 256)
+        score = detected_scores.get(sid, 0.0)
+        is_present = score > 0.0
+
+        if not has_voice:
+            source_label = "No voice profile"
+        elif is_present:
+            source_label = f"Match score: {score:.2f}"
+        else:
+            source_label = "-"
+
+        candidates.append(
+            AttendanceCandidateResult(
+                student_id=sid,
+                name=s["name"],
+                status="Present" if is_present else "Absent",
+                source=source_label,
+                is_present=is_present,
+                has_voice_profile=has_voice,
+            )
+        )
+
+    candidates.sort(key=lambda x: (not x.is_present, x.name.lower()))
+
+    return VoiceRecognitionResponse(
+        subject_id=subject_id,
+        total_enrolled=len(enrolled_students),
+        segments_processed=rec_result["segments_processed"],
+        warning=rec_result["warning"],
+        candidates=candidates,
+    )
