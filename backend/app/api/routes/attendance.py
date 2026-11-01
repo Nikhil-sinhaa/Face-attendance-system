@@ -143,3 +143,48 @@ async def process_voice_attendance(
         warning=rec_result["warning"],
         candidates=candidates,
     )
+
+
+@router.post("/sessions/confirm", response_model=AttendanceConfirmResponse)
+def confirm_attendance_session(
+    req: AttendanceConfirmRequest,
+    teacher: UserPayload = Depends(require_teacher),
+):
+    subject = supabase_service.get_subject_by_id(req.subject_id)
+    if not subject:
+        raise HTTPException(status_code=404, detail="Subject not found.")
+    if subject["teacher_id"] != teacher.id:
+        raise HTTPException(status_code=403, detail="Not authorized for this subject.")
+
+    if not req.logs:
+        raise HTTPException(status_code=400, detail="No attendance logs provided.")
+
+    # Validate that all student IDs in the request are actually enrolled in this subject
+    enrolled_students = supabase_service.get_enrolled_students(req.subject_id)
+    enrolled_ids = {s["student_id"] for s in enrolled_students}
+    for item in req.logs:
+        if item.student_id not in enrolled_ids:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Student {item.student_id} is not enrolled in this subject.",
+            )
+
+    session_ts = req.timestamp or datetime.now(timezone.utc).isoformat()
+
+    logs_to_insert = [
+        {
+            "subject_id": req.subject_id,
+            "student_id": item.student_id,
+            "timestamp": session_ts,
+            "is_present": item.is_present,
+        }
+        for item in req.logs
+    ]
+
+    inserted = supabase_service.create_attendance_logs(logs_to_insert)
+
+    return AttendanceConfirmResponse(
+        message="Attendance session confirmed and saved successfully.",
+        count=len(inserted),
+        session_timestamp=session_ts,
+    )
