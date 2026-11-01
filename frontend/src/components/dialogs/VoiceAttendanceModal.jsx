@@ -78,3 +78,46 @@ export const VoiceAttendanceModal = ({
       clearInterval(timerRef.current)
     }
   }
+
+
+    const handleFileUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setAudioBlob(file)
+      setAudioUrl(URL.createObjectURL(file))
+      setError('')
+    }
+  }
+
+  const handleAnalyze = async () => {
+    if (!audioBlob) {
+      setError('Please record or upload classroom audio first.')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    try {
+      // Use a consistent filename; librosa handles webm/ogg/wav on the backend
+      const filename =
+        audioBlob.type.includes('ogg') ? 'classroom_audio.ogg'
+        : audioBlob.type.includes('webm') ? 'classroom_audio.webm'
+        : 'classroom_audio.wav'
+      const audioFile = new File([audioBlob], filename, { type: audioBlob.type })
+      const result = await attendanceService.processVoiceAttendance(subjectId, audioFile)
+      onAnalysisComplete(result)
+      onClose()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to process voice recognition.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`
+  }
+
+  
