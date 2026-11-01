@@ -33,3 +33,25 @@ def get_dlib_models():
         )
     return _detector, _shape_predictor, _face_rec_model
 
+def extract_face_embeddings(image_np: np.ndarray) -> List[np.ndarray]:
+    """Extract 128D facial descriptors for all faces in image."""
+    detector, shape_predictor, face_rec_model = get_dlib_models()
+    faces = detector(image_np, 1)
+    encodings = []
+    for face in faces:
+        shape = shape_predictor(image_np, face)
+        descriptor = face_rec_model.compute_face_descriptor(image_np, shape, 1)
+        encodings.append(np.array(descriptor, dtype=np.float64))
+    return encodings
+
+
+def image_bytes_to_numpy(image_bytes: bytes) -> np.ndarray:
+    """Safely decode image bytes into RGB numpy array."""
+    try:
+        image = Image.open(io.BytesIO(image_bytes))
+        image = image.convert("RGB")
+        return np.array(image)
+    except Exception as e:
+        raise ValueError(f"Invalid image format or corrupt file: {e}")
+
+    
