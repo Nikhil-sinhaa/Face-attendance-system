@@ -1,0 +1,19 @@
+import io
+from typing import Any, Dict, List, Optional, Tuple
+import numpy as np
+from backend.app.core.config import settings
+
+_voice_encoder = None
+
+
+def _voice_dependencies():
+    """Load optional audio dependencies only when voice features are used."""
+    try:
+        import librosa
+        from resemblyzer import VoiceEncoder, preprocess_wav
+    except ImportError as exc:
+        raise RuntimeError(
+            "Voice recognition dependencies are not installed. Install the backend requirements."
+        ) from exc
+    return librosa, VoiceEncoder, preprocess_wav
+
