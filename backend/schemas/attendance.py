@@ -16,3 +16,10 @@ class AttendanceCandidateResult(BaseModel):
     total_enrolled: int
     total_faces_found: int
     candidates: List[AttendanceCandidateResult]
+
+    class VoiceRecognitionResponse(BaseModel):
+    subject_id: int
+    total_enrolled: int
+    segments_processed: int
+    warning: Optional[str] = None
+    candidates: List[AttendanceCandidateResult]
