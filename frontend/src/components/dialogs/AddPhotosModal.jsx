@@ -166,4 +166,15 @@ export const AddPhotosModal = ({ isOpen, onClose, photos, setPhotos }) => {
           </div>
         )}
 
-        
+
+      
+
+              <div className="mt-4 flex justify-end">
+          <Button variant="primary" onClick={onClose} icon={CheckCircle2}>
+            Done ({photos.length} Photo{photos.length === 1 ? '' : 's'})
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
