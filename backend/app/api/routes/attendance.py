@@ -188,3 +188,77 @@ def confirm_attendance_session(
         count=len(inserted),
         session_timestamp=session_ts,
     )
+
+
+@router.get("/teacher")
+def get_teacher_attendance_history(
+    teacher: UserPayload = Depends(require_teacher)
+):
+    raw_logs = supabase_service.get_teacher_attendance_records(teacher.id)
+
+    # Group by (subject_id, session_timestamp)
+    sessions_map = {}
+    for log in raw_logs:
+        ts = log.get("timestamp")
+        sub = log.get("subjects", {})
+        stud = log.get("students", {})
+        sub_id = log.get("subject_id")
+
+        if not ts or not sub_id:
+            continue
+
+        # Group key by ISO minute/second
+        ts_clean = ts.split(".")[0]
+        group_key = f"{sub_id}_{ts_clean}"
+
+        if group_key not in sessions_map:
+            sessions_map[group_key] = {
+                "session_id": group_key,
+                "timestamp": ts,
+                "subject_id": sub_id,
+                "subject_name": sub.get("name", "Unknown"),
+                "subject_code": sub.get("subject_code", ""),
+                "section": sub.get("section", ""),
+                "present_count": 0,
+                "total_count": 0,
+                "students": [],
+            }
+
+        sessions_map[group_key]["total_count"] += 1
+        if log.get("is_present"):
+            sessions_map[group_key]["present_count"] += 1
+
+        sessions_map[group_key]["students"].append({
+            "student_id": log.get("student_id"),
+            "student_name": stud.get("name", "Unknown"),
+            "is_present": bool(log.get("is_present")),
+        })
+
+    # Convert to list and compute attendance percentage
+    sessions = list(sessions_map.values())
+    for s in sessions:
+        total = s["total_count"]
+        present = s["present_count"]
+        s["rate"] = round((present / total * 100), 1) if total > 0 else 0.0
+
+    return sessions
+
+
+@router.get("/students/me")
+def get_my_attendance_history(
+    student: UserPayload = Depends(require_student)
+):
+    logs = supabase_service.get_student_attendance_records(student.id)
+    result = []
+    for log in logs:
+        sub = log.get("subjects") or {}
+        result.append({
+            "id": log["id"],
+            "timestamp": log["timestamp"],
+            "subject_id": log["subject_id"],
+            "subject_name": sub.get("name", "Unknown"),
+            "subject_code": sub.get("subject_code", ""),
+            "section": sub.get("section", ""),
+            "is_present": log.get("is_present", False),
+        })
+    return result
