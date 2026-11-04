@@ -8,9 +8,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 
 
 class Settings(BaseSettings):
+
     APP_NAME: str = "FaceVPlus API"
     APP_ENV: str = "development"
-    APP_DEBUG: bool = True
+    APP_DEBUG: bool = False
 
     # Supabase
     SUPABASE_URL: str = ""
@@ -22,8 +23,10 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
     # CORS
-    CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000"
-    FRONTEND_URL: str = "http://localhost:5173"
+    CORS_ORIGINS: str = (
+        "http://localhost:5173,"
+        "http://127.0.0.1:5173"
+    )
 
     # ML Pipelines
     FACE_RESEMBLANCE_THRESHOLD: float = 0.55
@@ -38,7 +41,11 @@ class Settings(BaseSettings):
     )
 
     def get_cors_origins(self) -> List[str]:
-        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+        return [
+            origin.strip().rstrip("/")
+            for origin in self.CORS_ORIGINS.split(",")
+            if origin.strip()
+        ]
 
 
 settings = Settings()

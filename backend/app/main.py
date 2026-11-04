@@ -11,10 +11,9 @@ app = FastAPI(
 )
 
 # CORS Middleware
-origins = settings.get_cors_origins()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins if origins else ["*"],
+    allow_origins=settings.get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -33,7 +32,9 @@ def health_check():
         "status": "healthy",
         "app": settings.APP_NAME,
         "environment": settings.APP_ENV,
-        "supabase_configured": bool(settings.SUPABASE_URL and settings.SUPABASE_KEY),
+        "supabase_configured": bool(
+            settings.SUPABASE_URL and settings.SUPABASE_KEY
+        ),
     }
 
 
@@ -41,5 +42,8 @@ def health_check():
 async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": "An internal server error occurred.", "error": str(exc)},
+        content={
+            "detail": "An internal server error occurred.",
+            "error": str(exc),
+        },
     )
