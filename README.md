@@ -234,7 +234,7 @@ Contributions, issues, and feature requests are welcome!
 * **Vikash Kumar** — https://github.com/vikashb24k-beep
 * **Rama Kumar** — https://github.com/RamanKumar-Dev
 * **R D** — https://github.com/rd6260
-* **Saksham Kushwah ** — https://github.com/shhadowpdf
+* **Saksham Kushwah** — https://github.com/shhadowpdf
 * Feel free to open a Pull Request or Issue to contribute to FaceVPlus.
 
 ## License
