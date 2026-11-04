@@ -115,7 +115,7 @@ cp .env.example .env
 
 Ensure `.env` contains:
 ```ini
-VITE_API_BASE_URL=http://127.0.0.1:8000
+VITE_API_URL=http://127.0.0.1:8000
 ```
 
 #### Step 4: Start the Frontend Development Server
@@ -233,6 +233,7 @@ Contributions, issues, and feature requests are welcome!
 
 * **Vikash Kumar** — https://github.com/vikashb24k-beep
 * **Raman Kumar** — https://github.com/RamanKumar-Dev
+* **Nikhil Kumar Sinha** — https://github.com/Nikhil-sinhaa
 * **R D** — https://github.com/rd6260
 * **Saksham Kushwah** — https://github.com/shhadowpdf
 * Feel free to open a Pull Request or Issue to contribute to FaceVPlus.
