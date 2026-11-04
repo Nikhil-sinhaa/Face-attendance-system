@@ -3,17 +3,11 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Webcam from 'react-webcam'
 import { useAuth } from '../../context/AuthContext'
 import { authService } from '../../services/authService'
-import '../../styles/student/student-registration.css'
-import {
-  GraduationCap,
-  Camera,
-  Mic,
-  Square,
-  AlertCircle,
-  CheckCircle2,
-  RefreshCw,
-  Sparkles,
-} from 'lucide-react'
+import { Button } from '../../components/common/Button'
+import { Input } from '../../components/common/Input'
+import { Notice } from '../../components/common/Notice'
+import { AuthShell } from '../../components/common/AuthShell'
+import { Camera, Mic, Square, RefreshCw } from 'lucide-react'
 
 export const StudentRegister = () => {
   const [name, setName] = useState('')
@@ -138,115 +132,114 @@ export const StudentRegister = () => {
   }
 
   return (
-    <div className="student-registration">
-      <div className="student-registration__card">
-        <div className="student-registration__header">
-          <div className="student-registration__icon">
-            <GraduationCap size={20} />
-          </div>
-          <div>
-            <h2>Create your student profile</h2>
-            <p>Enter your details, take one photo, then continue.</p>
-          </div>
-        </div>
-
-        <ol className="student-registration__steps">
-          {['Your details', 'Face photo', 'Optional voice'].map((step, index) => (
-            <li key={step}>
-              <strong>{index + 1}.</strong> {step}
-            </li>
-          ))}
-        </ol>
-
-        {error && (
-          <div className="ui-notice ui-notice--error">
-            <AlertCircle size={16} />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {success && (
-          <div className="ui-notice ui-notice--success">
-            <CheckCircle2 size={16} />
-            <span>{success}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="student-registration__form">
-          <div className="student-registration__fields">
-            <div className="plain-field"><label htmlFor="student_name">Full Name</label><input id="student_name" placeholder="e.g. Raman Sharma" value={name} onChange={(e) => setName(e.target.value)} required /></div>
-            <div className="plain-field"><label htmlFor="student_id">Registration / Roll Number</label><input id="student_id" inputMode="numeric" pattern="[0-9]*" placeholder="e.g. 202600123" value={studentId} onChange={(e) => setStudentId(e.target.value.replace(/\D/g, ''))} required /></div>
-          </div>
-
-          {/* Face Capture Section */}
-          <div>
-            <p className="student-registration__section-title">
-              2. Take a face photo <span style={{ color: '#f87171' }}>*</span>
-            </p>
-            <p className="student-registration__hint">Use good lighting and make sure only your face is in the frame.</p>
-
-            <div className="student-registration__camera">
-              {capturedPhotoUrl ? (
-                <img src={capturedPhotoUrl} alt="Snapped" />
-              ) : (
-                <Webcam
-                  audio={false}
-                  ref={webcamRef}
-                  screenshotFormat="image/jpeg"
-                  videoConstraints={{ facingMode: 'user', width: 1280, height: 720 }}
-                />
-              )}
-            </div>
-
-            <div style={{ marginTop: '0.75rem' }}>
-              {!capturedPhotoUrl ? (
-                <button className="plain-button plain-button--secondary" type="button" onClick={handleCapturePhoto} style={{ width: '100%' }}><Camera size={16} /> Snap photo</button>
-              ) : (
-                <button className="plain-button plain-button--secondary" type="button" onClick={() => {
-                    setCapturedPhotoUrl(null)
-                    setCapturedPhotoBlob(null)
-                  }} style={{ width: '100%' }}><RefreshCw size={16} /> Retake photo</button>
-              )}
-            </div>
-          </div>
-
-          <details className="student-registration__voice">
-            <summary>3. Add a voice sample <span>(optional)</span></summary>
-            <div className="student-registration__voice-content">
-              <div>
-              <div>
-                <p className="student-registration__hint">
-                  Record saying: <em>"I am present, my name is {name || '...'}"</em>
-                </p>
-              </div>
-
-              {voiceBlob && (
-                <span className="student-registration__hint">
-                  Voice Enrolled
-                </span>
-              )}
-            </div>
-
-            <div>
-              {!isRecording ? (
-                <button className="plain-button plain-button--secondary" type="button" onClick={startRecording}><Mic size={16} /> {voiceBlob ? 'Record voice again' : 'Record voice'}</button>
-              ) : (
-                <button className="plain-button plain-button--secondary" type="button" onClick={stopRecording}><Square size={16} /> Stop ({recordingSeconds}s)</button>
-              )}
-            </div>
-            </div>
-          </details>
-
-          <button className="plain-button" type="submit" disabled={loading || Boolean(success)} style={{ width: '100%' }}><Sparkles size={17} /> {loading ? 'Creating profile...' : 'Create student profile'}</button>
-        </form>
-
-        <div className="student-registration__signin">
-          Already have an account?{' '}
-          <Link to={`/student/login?return=${encodeURIComponent(returnPath)}`}>
-            Sign in with Face-ID
+    <AuthShell
+      side="student"
+      title="Register your face once."
+      intro="After this you sign in by looking at the camera, and the teacher’s photo or voice roll call can recognise you."
+      points={['Your details', 'One clear face photo', 'Optional voice sample for roll call']}
+      wide
+      footer={
+        <>
+          Already registered?{' '}
+          <Link
+            to={`/student/login?return=${encodeURIComponent(returnPath)}`}
+            className="font-semibold text-emerald-300 underline-offset-4 hover:underline"
+          >
+            Sign in with face
           </Link>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-7">
+        {error && <Notice>{error}</Notice>}
+        {success && <Notice tone="success">{success}</Notice>}
+
+        <fieldset className="grid gap-4 sm:grid-cols-2">
+          <legend className="eyebrow mb-4 flex items-center gap-2 text-slate-300"><span className="num text-indigo-400">01</span> Your details</legend>
+          <Input
+            label="Full name"
+            id="student_name"
+            placeholder="e.g. Raman Sharma"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+          <Input
+            label="Registration / roll no."
+            id="student_id"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            placeholder="e.g. 202600123"
+            value={studentId}
+            onChange={(e) => setStudentId(e.target.value.replace(/\D/g, ''))}
+            required
+          />
+        </fieldset>
+
+        <section aria-labelledby="face-step">
+          <h2 id="face-step" className="eyebrow mb-1 flex items-center gap-2 text-slate-300">
+            <span className="num text-indigo-400">02</span> Face photo <span className="text-red-300">required</span>
+          </h2>
+          <p className="mb-3 text-sm text-slate-400">Good light, and only your face in the frame.</p>
+          <div className="aspect-video overflow-hidden rounded-md border border-slate-600 bg-black [&_img]:h-full [&_img]:w-full [&_img]:object-cover [&_video]:h-full [&_video]:w-full [&_video]:object-cover">
+            {capturedPhotoUrl ? (
+              <img src={capturedPhotoUrl} alt="Your captured face" />
+            ) : (
+              <Webcam
+                audio={false}
+                ref={webcamRef}
+                screenshotFormat="image/jpeg"
+                videoConstraints={{ facingMode: 'user', width: 1280, height: 720 }}
+              />
+            )}
+          </div>
+          <div className="mt-3">
+            {!capturedPhotoUrl ? (
+              <Button variant="tertiary" icon={Camera} onClick={handleCapturePhoto} className="w-full">
+                Take photo
+              </Button>
+            ) : (
+              <Button
+                variant="tertiary"
+                icon={RefreshCw}
+                onClick={() => {
+                  setCapturedPhotoUrl(null)
+                  setCapturedPhotoBlob(null)
+                }}
+                className="w-full"
+              >
+                Retake photo
+              </Button>
+            )}
+          </div>
+        </section>
+
+        <details className="group rounded-md border border-slate-700 open:border-slate-500" open={isRecording || Boolean(voiceBlob)}>
+          <summary className="eyebrow flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-slate-300 marker:hidden">
+            <span><span className="num text-indigo-400">03</span>&nbsp; Voice sample <span className="text-slate-500">optional</span></span>
+            <span className="num text-slate-500 group-open:rotate-45 transition-transform" aria-hidden="true">+</span>
+          </summary>
+          <div className="space-y-3 border-t border-slate-700 px-4 py-4">
+            <p className="text-sm text-slate-300">
+              Say: <em className="text-slate-50">“I am present, my name is {name || '…'}”</em>
+            </p>
+            {voiceBlob && <p className="text-sm font-medium text-emerald-300">Voice sample recorded.</p>}
+            {!isRecording ? (
+              <Button variant="tertiary" icon={Mic} onClick={startRecording}>
+                {voiceBlob ? 'Record again' : 'Record voice'}
+              </Button>
+            ) : (
+              <Button variant="danger" icon={Square} onClick={stopRecording}>
+                Stop · {recordingSeconds}s
+              </Button>
+            )}
+          </div>
+        </details>
+
+        <Button type="submit" size="lg" loading={loading} disabled={Boolean(success)} className="w-full">
+          Create student profile
+        </Button>
+      </form>
+    </AuthShell>
   )
 }

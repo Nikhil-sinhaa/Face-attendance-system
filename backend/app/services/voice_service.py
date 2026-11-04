@@ -17,6 +17,7 @@ def _voice_dependencies():
         ) from exc
     return librosa, VoiceEncoder, preprocess_wav
 
+
 def get_voice_encoder() -> Any:
     """Lazy-load and cache the VoiceEncoder model."""
     global _voice_encoder
@@ -43,13 +44,14 @@ def get_voice_embedding(audio_bytes: bytes) -> Optional[List[float]]:
         wav = preprocess_wav(audio)
         embedding = encoder.embed_utterance(wav)
         return [float(x) for x in embedding.tolist()]
-    except Exception as e:
+    except Exception:
         return None
 
-    def identify_speaker_segment(
+
+def identify_speaker_segment(
     embedding: np.ndarray,
     candidates_dict: Dict[int, List[float]],
-    threshold: float = 0.65
+    threshold: float = 0.65,
 ) -> Tuple[Optional[int], float]:
     """
     Match utterance embedding against candidate student voice profiles using cosine similarity.
@@ -80,7 +82,7 @@ def get_voice_embedding(audio_bytes: bytes) -> Optional[List[float]]:
 def process_bulk_audio_attendance(
     audio_bytes: bytes,
     enrolled_students: List[Dict[str, Any]],
-    threshold: Optional[float] = None
+    threshold: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
     Segment classroom audio, match each speech segment against candidate profiles,
@@ -103,7 +105,7 @@ def process_bulk_audio_attendance(
         return {
             "detected_scores": {},
             "segments_processed": 0,
-            "warning": "No enrolled students have registered a voice profile."
+            "warning": "No enrolled students have registered a voice profile.",
         }
 
     librosa, _, preprocess_wav = _voice_dependencies()

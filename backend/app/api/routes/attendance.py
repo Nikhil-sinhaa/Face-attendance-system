@@ -10,9 +10,11 @@ from backend.app.schemas.attendance import (
     AttendanceConfirmRequest,
     AttendanceConfirmResponse,
 )
-from backend.app.services import supabase_service, face_service, voice_service
+from backend.app.services import face_service, voice_service
+from backend.app.services.db import subject_repo, enrollment_repo, attendance_repo
 
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
+
 
 @router.post("/face/recognize", response_model=FaceRecognitionResponse)
 async def recognize_face_attendance(
@@ -24,17 +26,17 @@ async def recognize_face_attendance(
         raise HTTPException(status_code=400, detail="No classroom photos uploaded.")
 
     # 1. Fetch subject and enrolled students
-    subject = supabase_service.get_subject_by_id(subject_id)
+    subject = subject_repo.get_subject_by_id(subject_id)
     if not subject:
         raise HTTPException(status_code=404, detail="Subject not found.")
     if subject["teacher_id"] != teacher.id:
         raise HTTPException(status_code=403, detail="Not authorized for this subject.")
 
-    enrolled_students = supabase_service.get_enrolled_students(subject_id)
+    enrolled_students = enrollment_repo.get_enrolled_students(subject_id)
     if not enrolled_students:
         raise HTTPException(status_code=400, detail="No students are enrolled in this subject.")
 
-    # 2. Read images bytes
+    # 2. Read image bytes
     images_bytes_list = []
     for f in files:
         b = await f.read()
@@ -45,9 +47,7 @@ async def recognize_face_attendance(
         raise HTTPException(status_code=400, detail="Uploaded images were empty or corrupted.")
 
     # 3. Run face recognition pipeline
-    rec_result = face_service.recognize_faces_in_images(
-        images_bytes_list, enrolled_students
-    )
+    rec_result = face_service.recognize_faces_in_images(images_bytes_list, enrolled_students)
 
     detected_map = rec_result["detected_student_ids"]
     candidates: List[AttendanceCandidateResult] = []
@@ -77,6 +77,7 @@ async def recognize_face_attendance(
         candidates=candidates,
     )
 
+
 @router.post("/voice/process", response_model=VoiceRecognitionResponse)
 async def process_voice_attendance(
     subject_id: int = Form(...),
@@ -84,13 +85,13 @@ async def process_voice_attendance(
     teacher: UserPayload = Depends(require_teacher),
 ):
     # 1. Verify subject
-    subject = supabase_service.get_subject_by_id(subject_id)
+    subject = subject_repo.get_subject_by_id(subject_id)
     if not subject:
         raise HTTPException(status_code=404, detail="Subject not found.")
     if subject["teacher_id"] != teacher.id:
         raise HTTPException(status_code=403, detail="Not authorized for this subject.")
 
-    enrolled_students = supabase_service.get_enrolled_students(subject_id)
+    enrolled_students = enrollment_repo.get_enrolled_students(subject_id)
     if not enrolled_students:
         raise HTTPException(status_code=400, detail="No students are enrolled in this subject.")
 
@@ -101,9 +102,7 @@ async def process_voice_attendance(
 
     # 3. Process bulk audio
     try:
-        rec_result = voice_service.process_bulk_audio_attendance(
-            audio_bytes, enrolled_students
-        )
+        rec_result = voice_service.process_bulk_audio_attendance(audio_bytes, enrolled_students)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to process audio: {e}")
 
@@ -150,7 +149,7 @@ def confirm_attendance_session(
     req: AttendanceConfirmRequest,
     teacher: UserPayload = Depends(require_teacher),
 ):
-    subject = supabase_service.get_subject_by_id(req.subject_id)
+    subject = subject_repo.get_subject_by_id(req.subject_id)
     if not subject:
         raise HTTPException(status_code=404, detail="Subject not found.")
     if subject["teacher_id"] != teacher.id:
@@ -159,8 +158,8 @@ def confirm_attendance_session(
     if not req.logs:
         raise HTTPException(status_code=400, detail="No attendance logs provided.")
 
-    # Validate that all student IDs in the request are actually enrolled in this subject
-    enrolled_students = supabase_service.get_enrolled_students(req.subject_id)
+    # Validate that all student IDs in the request are actually enrolled
+    enrolled_students = enrollment_repo.get_enrolled_students(req.subject_id)
     enrolled_ids = {s["student_id"] for s in enrolled_students}
     for item in req.logs:
         if item.student_id not in enrolled_ids:
@@ -181,7 +180,7 @@ def confirm_attendance_session(
         for item in req.logs
     ]
 
-    inserted = supabase_service.create_attendance_logs(logs_to_insert)
+    inserted = attendance_repo.create_attendance_logs(logs_to_insert)
 
     return AttendanceConfirmResponse(
         message="Attendance session confirmed and saved successfully.",
@@ -192,9 +191,9 @@ def confirm_attendance_session(
 
 @router.get("/teacher")
 def get_teacher_attendance_history(
-    teacher: UserPayload = Depends(require_teacher)
+    teacher: UserPayload = Depends(require_teacher),
 ):
-    raw_logs = supabase_service.get_teacher_attendance_records(teacher.id)
+    raw_logs = attendance_repo.get_teacher_attendance_records(teacher.id)
 
     # Group by (subject_id, session_timestamp)
     sessions_map = {}
@@ -207,7 +206,6 @@ def get_teacher_attendance_history(
         if not ts or not sub_id:
             continue
 
-        # Group key by ISO minute/second
         ts_clean = ts.split(".")[0]
         group_key = f"{sub_id}_{ts_clean}"
 
@@ -228,13 +226,14 @@ def get_teacher_attendance_history(
         if log.get("is_present"):
             sessions_map[group_key]["present_count"] += 1
 
-        sessions_map[group_key]["students"].append({
-            "student_id": log.get("student_id"),
-            "student_name": stud.get("name", "Unknown"),
-            "is_present": bool(log.get("is_present")),
-        })
+        sessions_map[group_key]["students"].append(
+            {
+                "student_id": log.get("student_id"),
+                "student_name": stud.get("name", "Unknown"),
+                "is_present": bool(log.get("is_present")),
+            }
+        )
 
-    # Convert to list and compute attendance percentage
     sessions = list(sessions_map.values())
     for s in sessions:
         total = s["total_count"]
@@ -246,19 +245,21 @@ def get_teacher_attendance_history(
 
 @router.get("/students/me")
 def get_my_attendance_history(
-    student: UserPayload = Depends(require_student)
+    student: UserPayload = Depends(require_student),
 ):
-    logs = supabase_service.get_student_attendance_records(student.id)
+    logs = attendance_repo.get_student_attendance_records(student.id)
     result = []
     for log in logs:
         sub = log.get("subjects") or {}
-        result.append({
-            "id": log["id"],
-            "timestamp": log["timestamp"],
-            "subject_id": log["subject_id"],
-            "subject_name": sub.get("name", "Unknown"),
-            "subject_code": sub.get("subject_code", ""),
-            "section": sub.get("section", ""),
-            "is_present": log.get("is_present", False),
-        })
+        result.append(
+            {
+                "id": log["id"],
+                "timestamp": log["timestamp"],
+                "subject_id": log["subject_id"],
+                "subject_name": sub.get("name", "Unknown"),
+                "subject_code": sub.get("subject_code", ""),
+                "section": sub.get("section", ""),
+                "is_present": log.get("is_present", False),
+            }
+        )
     return result

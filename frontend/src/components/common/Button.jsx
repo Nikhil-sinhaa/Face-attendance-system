@@ -1,5 +1,26 @@
 import React from 'react'
 
+const base =
+  'inline-flex items-center justify-center rounded-md font-semibold whitespace-nowrap select-none ' +
+  'border transition-[background-color,border-color,color,transform] duration-150 ease-out ' +
+  'active:translate-y-px disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800 disabled:text-slate-500 disabled:active:translate-y-0 ' +
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400'
+
+const variants = {
+  primary: 'bg-indigo-400 border-indigo-400 text-slate-950 enabled:hover:bg-indigo-300 enabled:hover:border-indigo-300',
+  secondary: 'bg-pink-500 border-pink-500 text-slate-950 enabled:hover:bg-pink-400 enabled:hover:border-pink-400',
+  tertiary: 'bg-slate-800 border-slate-700 text-slate-100 enabled:hover:bg-slate-700 enabled:hover:border-slate-600',
+  outline: 'bg-transparent border-slate-600 text-slate-200 enabled:hover:bg-slate-800 enabled:hover:border-slate-500',
+  danger: 'bg-red-500/10 border-red-500/40 text-red-300 enabled:hover:bg-red-500/20 enabled:hover:border-red-400/60',
+  ghost: 'bg-transparent border-transparent text-slate-400 enabled:hover:bg-slate-800 enabled:hover:text-slate-100',
+}
+
+const sizes = {
+  sm: 'text-xs px-3 py-1.5 gap-1.5 min-h-8',
+  md: 'text-sm px-4 py-2 gap-2 min-h-10',
+  lg: 'text-[0.9375rem] px-5 py-2.5 gap-2.5 min-h-12',
+}
+
 export const Button = ({
   children,
   type = 'button',
@@ -11,58 +32,20 @@ export const Button = ({
   onClick,
   className = '',
   ...props
-}) => {
-  const base =
-    'inline-flex items-center justify-center font-medium rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-950 disabled:opacity-50 disabled:cursor-not-allowed select-none'
-
-  const variants = {
-    primary:
-      'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/25 focus:ring-indigo-500 border border-transparent',
-    secondary:
-      'bg-pink-600 hover:bg-pink-500 text-white shadow-md shadow-pink-600/25 focus:ring-pink-500 border border-transparent',
-    tertiary:
-      'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 focus:ring-slate-500',
-    outline:
-      'bg-transparent hover:bg-slate-800 text-slate-300 border border-slate-700 focus:ring-slate-500',
-    danger:
-      'bg-red-600 hover:bg-red-500 text-white shadow-md shadow-red-600/20 focus:ring-red-500 border border-transparent',
-    ghost:
-      'bg-transparent hover:bg-slate-800/60 text-slate-400 hover:text-slate-200 border border-transparent',
-  }
-
-  const sizes = {
-    sm: 'text-xs px-3 py-1.5 gap-1.5',
-    md: 'text-sm px-4 py-2.5 gap-2',
-    lg: 'text-base px-5 py-3 gap-2.5 font-semibold',
-  }
-
-  return (
-    <button
-      type={type}
-      disabled={disabled || loading}
-      onClick={onClick}
-      className={`${base} ${variants[variant] || variants.primary} ${sizes[size] || sizes.md} ${className}`}
-      {...props}
-    >
-      {loading ? (
-        <svg
-          className="h-4 w-4 animate-spin text-current"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          />
-        </svg>
-      ) : Icon ? (
-        <Icon className="h-4 w-4 shrink-0" />
-      ) : null}
-      <span>{children}</span>
-    </button>
-  )
-}
-
+}) => (
+  <button
+    type={type}
+    disabled={disabled || loading}
+    aria-busy={loading || undefined}
+    onClick={onClick}
+    className={`${base} ${variants[variant] || variants.primary} ${sizes[size] || sizes.md} ${className}`}
+    {...props}
+  >
+    {loading ? (
+      <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true" />
+    ) : Icon ? (
+      <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+    ) : null}
+    <span className="inline-flex items-center gap-2">{children}</span>
+  </button>
+)

@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Notice } from '../common/Notice'
 import { Modal } from '../common/Modal'
 import { Input } from '../common/Input'
 import { Button } from '../common/Button'
@@ -39,15 +40,11 @@ export const CreateSubjectModal = ({ isOpen, onClose, onCreated }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Create New Subject"
+      title="New subject"
       subtitle="Enter details for the new course and section"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400 font-medium">
-            {error}
-          </div>
-        )}
+        {error && <Notice>{error}</Notice>}
 
         <Input
           label="Subject Code"
@@ -76,12 +73,12 @@ export const CreateSubjectModal = ({ isOpen, onClose, onCreated }) => {
           onChange={(e) => setFormData({ ...formData, section: e.target.value })}
         />
 
-        <div className="mt-6 flex items-center justify-end gap-3 pt-3">
+        <div className="flex items-center justify-end gap-3 border-t border-slate-800 pt-4">
           <Button variant="ghost" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
           <Button type="submit" variant="primary" loading={loading}>
-            Create Subject
+            Create subject
           </Button>
         </div>
       </form>

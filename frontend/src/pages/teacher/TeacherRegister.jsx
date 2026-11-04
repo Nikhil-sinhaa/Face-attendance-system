@@ -4,7 +4,9 @@ import { useAuth } from '../../context/AuthContext'
 import { authService } from '../../services/authService'
 import { Input } from '../../components/common/Input'
 import { Button } from '../../components/common/Button'
-import { School, User, Lock, UserCheck, ArrowRight, AlertCircle } from 'lucide-react'
+import { AuthShell } from '../../components/common/AuthShell'
+import { Notice } from '../../components/common/Notice'
+import { User, Lock, UserCheck, ArrowRight } from 'lucide-react'
 
 export const TeacherRegister = () => {
   const [formData, setFormData] = useState({
@@ -49,24 +51,22 @@ export const TeacherRegister = () => {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-12rem)] items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md space-y-6 rounded-3xl border border-slate-800 bg-slate-900/90 p-8 shadow-2xl shadow-black/40">
-        <div className="text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-pink-500/10 border border-pink-500/20 text-pink-400 mb-4 shadow-inner">
-            <School className="h-7 w-7" />
-          </div>
-          <h2 className="text-2xl font-bold tracking-tight text-white">Create Teacher Profile</h2>
-          <p className="mt-1 text-xs text-slate-400">Join FaceVPlus to manage courses and attendance</p>
-        </div>
-
-        {error && (
-          <div className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400 font-medium">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <AuthShell
+      side="teacher"
+      title="Set up your teaching profile."
+      intro="One account for all your subjects. Students join with a code you share — no spreadsheets to import."
+      points={['Create a subject in under a minute', 'Share its code or QR with the class', 'Start taking attendance the same day']}
+      footer={
+        <>
+          Already registered?{' '}
+          <Link to="/teacher/login" className="font-semibold text-pink-300 underline-offset-4 hover:underline">
+            Sign in
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+        {error && <Notice>{error}</Notice>}
           <Input
             label="Full Name"
             id="name"
@@ -108,20 +108,11 @@ export const TeacherRegister = () => {
             autoComplete="new-password"
           />
 
-          <Button type="submit" variant="secondary" size="lg" loading={loading} className="w-full mt-2">
-            <span>Register Profile</span>
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </form>
-
-        <div className="border-t border-slate-800 pt-5 text-center text-xs text-slate-400">
-          Already registered?{' '}
-          <Link to="/teacher/login" className="font-semibold text-pink-400 hover:text-pink-300">
-            Sign in here
-          </Link>
-        </div>
-      </div>
-    </div>
+          <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full">
+          <span>Create account</span>
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+      </form>
+    </AuthShell>
   )
 }
-

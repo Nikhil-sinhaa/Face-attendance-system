@@ -2,13 +2,13 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from backend.app.core.security import decode_access_token, is_access_token_revoked
 from backend.app.schemas.auth import UserPayload
-from backend.app.services import supabase_service
+from backend.app.services.db import teacher_repo, student_repo
 
 security = HTTPBearer(auto_error=False)
 
 
 def get_current_user(
-    auth: HTTPAuthorizationCredentials = Depends(security)
+    auth: HTTPAuthorizationCredentials = Depends(security),
 ) -> UserPayload:
     if not auth or not auth.credentials:
         raise HTTPException(
@@ -34,23 +34,29 @@ def get_current_user(
 
     claimed_role = payload.get("role")
     if claimed_role == "teacher":
-        account = supabase_service.get_teacher_by_id(user_id)
-        if not account:
-            account = None
-        user = UserPayload(
-            id=user_id,
-            username=account["username"],
-            name=account["name"],
-            role="teacher",
-        ) if account else None
+        account = teacher_repo.get_teacher_by_id(user_id)
+        user = (
+            UserPayload(
+                id=user_id,
+                username=account["username"],
+                name=account["name"],
+                role="teacher",
+            )
+            if account
+            else None
+        )
     elif claimed_role == "student":
-        account = supabase_service.get_student_by_id(user_id)
-        user = UserPayload(
-            id=user_id,
-            username=None,
-            name=account["name"],
-            role="student",
-        ) if account else None
+        account = student_repo.get_student_by_id(user_id)
+        user = (
+            UserPayload(
+                id=user_id,
+                username=None,
+                name=account["name"],
+                role="student",
+            )
+            if account
+            else None
+        )
     else:
         user = None
 

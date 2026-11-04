@@ -1,30 +1,22 @@
+/* Shared primitives for pages that still use hand-written CSS.
+   All values come from the theme tokens declared in index.css. */
+
 .plain-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: .5rem;
-  min-height: 2.75rem;
-  padding: .65rem 1rem;
-  border: 1px solid transparent;
-  border-radius: .65rem;
-  cursor: pointer;
-  color: #fff;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  box-shadow: 0 8px 16px rgba(79, 70, 229, .2);
-  font: 600 .9rem inherit;
-  transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  min-height: 2.5rem; padding: .5rem 1rem;
+  border: 1px solid var(--color-indigo-400); border-radius: var(--radius-md);
+  background: var(--color-indigo-400); color: var(--color-slate-950);
+  font: 600 .875rem/1 var(--font-sans); white-space: nowrap; cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease, transform .15s ease;
 }
+.plain-button:hover:not(:disabled) { background: var(--color-indigo-300); border-color: var(--color-indigo-300); }
+.plain-button:active:not(:disabled) { transform: translateY(1px); }
+.plain-button:disabled { cursor: not-allowed; opacity: .45; }
+.plain-button--secondary { background: var(--color-slate-800); border-color: var(--color-slate-600); color: var(--color-slate-100); }
+.plain-button--secondary:hover:not(:disabled) { background: var(--color-slate-700); border-color: var(--color-slate-500); }
 
-.plain-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background: linear-gradient(135deg, #818cf8, #4f46e5);
-  box-shadow: 0 12px 22px rgba(79, 70, 229, .32);
+.ui-notice {
+  display: flex; gap: .5rem; padding: .75rem 1rem; border: 1px solid; border-radius: var(--radius-md); font-size: .875rem;
 }
-
-.plain-button:disabled { cursor: not-allowed; opacity: .55; }
-.plain-button--secondary { border-color: #334155; background: rgba(30, 41, 59, .8); box-shadow: none; color: #e2e8f0; }
-.plain-button--secondary:hover:not(:disabled) { background: #334155; box-shadow: none; }
-
-.ui-notice { display: flex; gap: .5rem; padding: .75rem; border: 1px solid; border-radius: .65rem; font-size: .8rem; }
-.ui-notice--error { border-color: rgba(248,113,113,.35); color: #fca5a5; background: rgba(239,68,68,.1); }
-.ui-notice--success { border-color: rgba(52,211,153,.35); color: #6ee7b7; background: rgba(16,185,129,.1); }
+.ui-notice--error { border-color: rgb(248 113 113 / .4); color: #fecaca; background: rgb(248 113 113 / .1); }
+.ui-notice--success { border-color: rgb(52 211 153 / .4); color: #a7f3d0; background: rgb(52 211 153 / .1); }

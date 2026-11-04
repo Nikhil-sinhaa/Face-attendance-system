@@ -1,4 +1,4 @@
-from typing import List, Optional, Any
+from typing import List, Optional
 from pydantic import BaseModel
 
 
@@ -11,13 +11,14 @@ class AttendanceCandidateResult(BaseModel):
     has_voice_profile: Optional[bool] = None
 
 
-    class FaceRecognitionResponse(BaseModel):
+class FaceRecognitionResponse(BaseModel):
     subject_id: int
     total_enrolled: int
     total_faces_found: int
     candidates: List[AttendanceCandidateResult]
 
-    class VoiceRecognitionResponse(BaseModel):
+
+class VoiceRecognitionResponse(BaseModel):
     subject_id: int
     total_enrolled: int
     segments_processed: int
@@ -25,7 +26,7 @@ class AttendanceCandidateResult(BaseModel):
     candidates: List[AttendanceCandidateResult]
 
 
-    class AttendanceLogItem(BaseModel):
+class AttendanceLogItem(BaseModel):
     student_id: int
     is_present: bool
 

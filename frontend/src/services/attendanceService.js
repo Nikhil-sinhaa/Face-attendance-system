@@ -13,17 +13,20 @@ export const attendanceService = {
     return res.data
   },
 
-    async processVoiceAttendance(subjectId, audioBlob) {
+  async processVoiceAttendance(subjectId, audioBlob) {
     const formData = new FormData()
     formData.append('subject_id', subjectId)
-    // Derive a sensible extension from the blob MIME type so the backend can decode it
+    // Derive a file extension from the blob MIME type so the backend can decode it
     const ext =
       audioBlob.type.includes('ogg') ? 'ogg'
       : audioBlob.type.includes('webm') ? 'webm'
       : audioBlob.type.includes('mp4') ? 'mp4'
       : 'wav'
     const filename = `classroom_audio.${ext}`
-    const audioFile = audioBlob instanceof File ? audioBlob : new File([audioBlob], filename, { type: audioBlob.type || 'audio/webm' })
+    const audioFile =
+      audioBlob instanceof File
+        ? audioBlob
+        : new File([audioBlob], filename, { type: audioBlob.type || 'audio/webm' })
     formData.append('audio_file', audioFile, audioFile.name)
     const res = await api.post('/attendance/voice/process', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -31,20 +34,20 @@ export const attendanceService = {
     return res.data
   },
 
-    async confirmAttendanceSession(subjectId, logs, timestamp = null) {
+  async confirmAttendanceSession(subjectId, logs, timestamp = null) {
     const payload = {
       subject_id: subjectId,
       timestamp: timestamp || new Date().toISOString(),
-      logs: logs.map((l) => ({
-        student_id: l.student_id,
-        is_present: Boolean(l.is_present),
+      logs: logs.map((log) => ({
+        student_id: log.student_id,
+        is_present: Boolean(log.is_present),
       })),
     }
     const res = await api.post('/attendance/sessions/confirm', payload)
     return res.data
   },
 
-    async getTeacherAttendanceHistory() {
+  async getTeacherAttendanceHistory() {
     const res = await api.get('/attendance/teacher')
     return res.data
   },

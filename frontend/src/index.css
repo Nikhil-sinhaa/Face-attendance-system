@@ -1,7 +1,165 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   FaceVPlus design system — "The Register"
+   A classroom roll book: warm graphite paper, ruled lines, one marker accent.
+   Existing Tailwind palette names are remapped so every page inherits it:
+     slate  -> warm graphite neutrals (ink / paper)
+     indigo -> marker amber   (primary action, focus, "you are here")
+     pink   -> terracotta     (teacher side of the product)
+     violet -> alias of terracotta
+   Semantic colours (present / absent / warning) keep emerald / red / amber.
+   ========================================================================== */
+
+@theme {
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* Neutrals */
+  --color-slate-50: #f6f2e8;
+  --color-slate-100: #ece7da;
+  --color-slate-200: #dad4c6;
+  --color-slate-300: #bdb6a6;
+  --color-slate-400: #aaa392;
+  --color-slate-500: #959080;
+  --color-slate-600: #4d4940;
+  --color-slate-700: #36332d;
+  --color-slate-800: #2a2824;
+  --color-slate-900: #1b1a17;
+  --color-slate-950: #121110;
+
+  /* Marker amber (primary) */
+  --color-indigo-50: #fff8e1;
+  --color-indigo-100: #ffefb8;
+  --color-indigo-200: #ffe38a;
+  --color-indigo-300: #f7d25c;
+  --color-indigo-400: #efc03a;
+  --color-indigo-500: #d9a41a;
+  --color-indigo-600: #9a6a06;
+  --color-indigo-700: #7a5304;
+  --color-indigo-800: #5a3c03;
+  --color-indigo-900: #3d2a04;
+  --color-indigo-950: #2a1d03;
+
+  /* Terracotta (teacher) */
+  --color-pink-50: #fdf1ec;
+  --color-pink-100: #fadfd4;
+  --color-pink-200: #f5c0ad;
+  --color-pink-300: #f0a58d;
+  --color-pink-400: #ea8466;
+  --color-pink-500: #dc6a4a;
+  --color-pink-600: #b8492d;
+  --color-pink-700: #933a23;
+  --color-pink-800: #6e2b1a;
+  --color-pink-900: #4a1d11;
+  --color-pink-950: #2f120b;
+  --color-violet-300: #f0a58d;
+  --color-violet-400: #ea8466;
+  --color-violet-500: #dc6a4a;
+
+  /* Shape: tight, ledger-like. Overrides the default pillowy radii. */
+  --radius-md: 0.25rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.375rem;
+  --radius-2xl: 0.5rem;
+  --radius-3xl: 0.5rem;
+
+  /* Shadows: flat. Depth comes from rules and surface steps, not glow. */
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
+  --shadow-2xl: 0 24px 48px -12px rgb(0 0 0 / 0.55);
+  --shadow-inner: none;
+
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+
+  /* Breakpoints (explicit, so they are part of the system rather than a default) */
+  --breakpoint-sm: 40rem;   /* 640  — large phones / small tablets */
+  --breakpoint-md: 48rem;   /* 768  — tablets */
+  --breakpoint-lg: 64rem;   /* 1024 — laptops: two-column layouts begin */
+  --breakpoint-xl: 80rem;   /* 1280 */
+
+  /* Spacing: 4px base unit. Use multiples via Tailwind's p-*, gap-*, space-*. */
+  --spacing: 0.25rem;
+
+  /* Layout constraints */
+  --container-page: 80rem;      /* max page width (matches max-w-7xl in App.jsx) */
+  --container-prose: 36rem;     /* max line length for body copy */
+  --container-form: 32rem;      /* single-column forms */
+}
+
 @layer base {
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
+  }
   body {
-    @apply bg-slate-950 text-slate-100 antialiased font-sans selection:bg-indigo-500 selection:text-white min-h-screen;
+    @apply bg-slate-950 text-slate-100 antialiased font-sans min-h-screen;
+    font-feature-settings: "tnum" 0;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  p { text-wrap: pretty; }
+  ::selection { background: var(--color-indigo-400); color: var(--color-slate-950); }
+
+  :focus-visible {
+    outline: 2px solid var(--color-indigo-400);
+    outline-offset: 2px;
+  }
+  button, a, select, summary { -webkit-tap-highlight-color: transparent; }
+  button:not(:disabled), [role="button"] { cursor: pointer; }
+
+  select, input, textarea {
+    color-scheme: dark;
+  }
+}
+
+@layer components {
+  /* Small caps label used above sections / on form fields */
+  .eyebrow {
+    @apply font-mono text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-slate-400;
+  }
+  .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+  /* Ruled surface: the basic container. Replaces rounded glass cards. */
+  .sheet {
+    @apply border border-slate-800 bg-slate-900 rounded-lg;
+  }
+  .rule-t { @apply border-t border-slate-800; }
+
+  /* Page entrance — one orchestrated reveal, nothing looping */
+  .rise {
+    animation: rise 0.5s var(--ease-out-quart) both;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer components {
+  .field-select {
+    @apply block min-h-11 w-full appearance-none rounded-md border border-slate-600 bg-slate-950 py-2.5 pl-3.5 pr-10 text-sm font-medium text-slate-50 transition-colors hover:border-slate-500 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239d9686' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
   }
 }

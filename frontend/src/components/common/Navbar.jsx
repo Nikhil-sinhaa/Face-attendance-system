@@ -1,11 +1,16 @@
 import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { ShieldCheck, LogOut, GraduationCap, School } from 'lucide-react'
+import { LogOut } from 'lucide-react'
+import { LogoMark, Wordmark } from './Logo'
+
+const navLink =
+  'px-3 py-2 text-sm font-medium transition-colors rounded-md hover:text-slate-50 hover:bg-slate-800'
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth()
   const navigate = useNavigate()
+  const isTeacher = user?.role === 'teacher'
 
   const handleLogout = async () => {
     await logout()
@@ -13,67 +18,57 @@ export const Navbar = () => {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-900/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="flex items-center gap-2.5 transition hover:opacity-90">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 shadow-md shadow-indigo-500/20">
-            <ShieldCheck className="h-6 w-6 text-white" />
-          </div>
-          <div>
-             <span className=" font-bold bg-gradient-to-r from-indigo-400 via-red-400 to-pink-400 bg-clip-text text-transparent">
-            FaceVplus
-          </span>
-            <span className="hidden text-xs text-indigo-400 sm:inline-block sm:ml-2 font-medium">AI Attendance</span>
-          </div>
+    <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-950/95">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-50 focus:rounded-md focus:bg-indigo-400 focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-slate-950"
+      >
+        Skip to content
+      </a>
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <Link to="/" className="flex items-center gap-2.5 text-indigo-400" aria-label="FaceVPlus home">
+          <LogoMark className="h-6 w-6" />
+          <Wordmark />
         </Link>
 
-        <nav className="flex items-center gap-3">
+        <nav className="flex items-center gap-1 sm:gap-2" aria-label="Primary">
           {isAuthenticated ? (
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-950/60 px-3 py-1.5 text-sm text-slate-300">
-                {user?.role === 'teacher' ? (
-                  <School className="h-4 w-4 text-violet-400" />
-                ) : (
-                  <GraduationCap className="h-4 w-4 text-emerald-400" />
-                )}
-                <span className="font-medium text-white">{user?.name}</span>
-                <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-slate-400">
-                  {user?.role}
-                </span>
-              </div>
-
-              <Link
-                to={user?.role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard'}
-                className="hidden rounded-lg px-3 py-1.5 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white sm:inline-block"
+            <>
+              <NavLink
+                to={isTeacher ? '/teacher/dashboard' : '/student/dashboard'}
+                className={({ isActive }) =>
+                  `${navLink} ${isActive ? 'text-indigo-300' : 'text-slate-300'}`
+                }
               >
                 Dashboard
-              </Link>
-
+              </NavLink>
+              <div className="mx-1 hidden h-5 w-px bg-slate-700 sm:block" />
+              <div className="hidden items-center gap-2 pr-1 sm:flex">
+                <span className={`h-2 w-2 rounded-full ${isTeacher ? 'bg-pink-400' : 'bg-emerald-400'}`} aria-hidden="true" />
+                <span className="max-w-40 truncate text-sm font-medium text-slate-100">{user?.name}</span>
+                <span className="eyebrow">{user?.role}</span>
+              </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-400 transition hover:bg-red-500/20 hover:text-red-300"
+                className="flex items-center gap-1.5 rounded-md border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-300"
               >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
+                <LogOut className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Log out</span>
+                <span className="sr-only sm:hidden">Log out</span>
               </button>
-            </div>
+            </>
           ) : (
-            <div className="flex items-center gap-2">
-              <Link
-                to="/student/login"
-                className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3.5 py-1.5 text-sm font-medium text-slate-200 transition hover:bg-slate-700 hover:text-white"
-              >
-                <GraduationCap className="h-4 w-4 text-emerald-400" />
-                <span>Student</span>
+            <>
+              <Link to="/student/login" className={`${navLink} text-slate-300`}>
+                Student
               </Link>
               <Link
                 to="/teacher/login"
-                className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm shadow-indigo-600/30 transition hover:bg-indigo-500"
+                className="rounded-md border border-indigo-400 bg-indigo-400 px-3.5 py-1.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-indigo-300"
               >
-                <School className="h-4 w-4" />
-                <span>Teacher</span>
+                Teacher sign in
               </Link>
-            </div>
+            </>
           )}
         </nav>
       </div>

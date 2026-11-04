@@ -8,7 +8,8 @@ from backend.app.schemas.auth import (
     TokenResponse,
     UserPayload,
 )
-from backend.app.services import supabase_service, face_service, voice_service
+from backend.app.services import face_service, voice_service
+from backend.app.services.db import teacher_repo, student_repo
 from backend.app.api.deps import get_current_user, security
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -16,14 +17,14 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/teacher/register", response_model=TokenResponse)
 def register_teacher(req: TeacherRegisterRequest):
-    existing = supabase_service.get_teacher_by_username(req.username)
+    existing = teacher_repo.get_teacher_by_username(req.username)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already taken. Please choose another.",
         )
     password_hash = hash_password(req.password)
-    teacher = supabase_service.create_teacher(req.username, password_hash, req.name)
+    teacher = teacher_repo.create_teacher(req.username, password_hash, req.name)
 
     user_payload = UserPayload(
         id=teacher["teacher_id"],
@@ -32,14 +33,19 @@ def register_teacher(req: TeacherRegisterRequest):
         role="teacher",
     )
     token = create_access_token(
-        data={"sub": str(user_payload.id), "username": user_payload.username, "name": user_payload.name, "role": "teacher"}
+        data={
+            "sub": str(user_payload.id),
+            "username": user_payload.username,
+            "name": user_payload.name,
+            "role": "teacher",
+        }
     )
     return TokenResponse(access_token=token, user=user_payload)
 
 
 @router.post("/teacher/login", response_model=TokenResponse)
 def login_teacher(req: TeacherLoginRequest):
-    teacher = supabase_service.get_teacher_by_username(req.username)
+    teacher = teacher_repo.get_teacher_by_username(req.username)
     if not teacher or not verify_password(req.password, teacher.get("password", "")):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -52,7 +58,12 @@ def login_teacher(req: TeacherLoginRequest):
         role="teacher",
     )
     token = create_access_token(
-        data={"sub": str(user_payload.id), "username": user_payload.username, "name": user_payload.name, "role": "teacher"}
+        data={
+            "sub": str(user_payload.id),
+            "username": user_payload.username,
+            "name": user_payload.name,
+            "role": "teacher",
+        }
     )
     return TokenResponse(access_token=token, user=user_payload)
 
@@ -63,7 +74,7 @@ async def login_student_face(file: UploadFile = File(...)):
     if not contents:
         raise HTTPException(status_code=400, detail="Empty image uploaded.")
 
-    all_students = supabase_service.get_all_students()
+    all_students = student_repo.get_all_students()
     student, num_faces, msg = face_service.identify_student_for_login(contents, all_students)
 
     if num_faces == 0:
@@ -100,7 +111,7 @@ async def register_student(
         raise HTTPException(status_code=400, detail="Student name is required.")
     if student_id <= 0:
         raise HTTPException(status_code=400, detail="Registration number must be a positive whole number.")
-    if supabase_service.get_student_by_id(student_id):
+    if student_repo.get_student_by_id(student_id):
         raise HTTPException(status_code=400, detail="This registration number is already registered.")
 
     face_bytes = await face_file.read()
@@ -132,7 +143,7 @@ async def register_student(
         if voice_bytes and len(voice_bytes) > 1000:
             voice_embedding = voice_service.get_voice_embedding(voice_bytes)
 
-    student = supabase_service.create_student(
+    student = student_repo.create_student(
         student_id=student_id,
         name=name,
         face_embedding=face_embedding,

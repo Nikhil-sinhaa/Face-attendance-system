@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
+import { Notice } from '../common/Notice'
 import { Modal } from '../common/Modal'
 import { Input } from '../common/Input'
 import { Button } from '../common/Button'
 import { subjectService } from '../../services/subjectService'
-import { Hash, CheckCircle, AlertCircle } from 'lucide-react'
+import { Hash } from 'lucide-react'
 
 export const EnrollModal = ({ isOpen, onClose, onEnrolled }) => {
   const [code, setCode] = useState('')
@@ -54,24 +55,14 @@ export const EnrollModal = ({ isOpen, onClose, onEnrolled }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Enroll in Subject"
+      title="Enrol in subject"
       subtitle="Enter the subject code provided by your teacher"
       maxWidth="max-w-md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400 font-medium">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
+        {error && <Notice>{error}</Notice>}
 
-        {success && (
-          <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-400 font-medium">
-            <CheckCircle className="h-4 w-4 shrink-0" />
-            <span>{success}</span>
-          </div>
-        )}
+        {success && <Notice tone="success">{success}</Notice>}
 
         <Input
           label="Subject Code"
@@ -84,12 +75,12 @@ export const EnrollModal = ({ isOpen, onClose, onEnrolled }) => {
           disabled={loading || Boolean(success)}
         />
 
-        <div className="mt-6 flex items-center justify-end gap-3 pt-3">
+        <div className="flex items-center justify-end gap-3 border-t border-slate-800 pt-4">
           <Button variant="ghost" type="button" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
           <Button type="submit" variant="primary" loading={loading} disabled={Boolean(success)}>
-            Enroll Now
+            Enrol
           </Button>
         </div>
       </form>

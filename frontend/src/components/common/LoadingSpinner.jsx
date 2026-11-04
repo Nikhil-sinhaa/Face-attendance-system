@@ -1,19 +1,13 @@
 import React from 'react'
 
-export const LoadingSpinner = ({ size = 'md', text = null }) => {
-  const sizes = {
-    sm: 'h-4 w-4',
-    md: 'h-8 w-8',
-    lg: 'h-12 w-12',
-  }
+const sizes = { sm: 'h-4 w-4', md: 'h-6 w-6', lg: 'h-9 w-9' }
 
-  return (
-    <div className="flex flex-col items-center justify-center p-8 gap-3">
-      <div
-        className={`${sizes[size] || sizes.md} animate-spin rounded-full border-2 border-indigo-500 border-t-transparent`}
-      />
-      {text && <p className="text-sm text-slate-400 animate-pulse font-medium">{text}</p>}
-    </div>
-  )
-}
-
+export const LoadingSpinner = ({ size = 'md', text = null }) => (
+  <div role="status" aria-live="polite" className="flex min-h-[65vh] flex-col items-center justify-center gap-3 p-10">
+    <div
+      className={`${sizes[size] || sizes.md} animate-spin rounded-full border-2 border-slate-700 border-t-indigo-400`}
+      aria-hidden="true"
+    />
+    {text ? <p className="eyebrow">{text}</p> : <span className="sr-only">Loading</span>}
+  </div>
+)

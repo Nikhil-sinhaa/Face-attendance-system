@@ -4,7 +4,9 @@ import Webcam from 'react-webcam'
 import { useAuth } from '../../context/AuthContext'
 import { authService } from '../../services/authService'
 import { Button } from '../../components/common/Button'
-import { ScanFace, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { AuthShell } from '../../components/common/AuthShell'
+import { Notice } from '../../components/common/Notice'
+import { ScanFace } from 'lucide-react'
 
 export const StudentLogin = () => {
   const [loading, setLoading] = useState(false)
@@ -49,32 +51,26 @@ export const StudentLogin = () => {
   }, [login, navigate])
 
   return (
-    <div className="flex min-h-[calc(100vh-12rem)] items-center justify-center px-4 py-12">
-      <div className="w-full max-w-lg space-y-6 rounded-3xl border border-slate-800 bg-slate-900/90 p-8 shadow-2xl shadow-black/40 text-center">
-        <div>
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mb-4 shadow-inner">
-            <ScanFace className="h-7 w-7" />
-          </div>
-          <h2 className="text-2xl font-bold tracking-tight text-white">Student Face-ID Login</h2>
-          <p className="mt-1 text-xs text-slate-400">Position your face in the center of the frame</p>
-        </div>
+    <AuthShell
+      side="student"
+      title="Your face is your login."
+      intro="Look at the camera and you are in. No password, no student card."
+      points={['Face the camera in good light', 'Remove anything covering your face', 'New? Register your face once, first']}
+      wide
+      footer={
+        <>
+          Not recognised, or new here?{' '}
+          <Link to="/student/register" className="font-semibold text-emerald-300 underline-offset-4 hover:underline">
+            Register your face &amp; voice
+          </Link>
+        </>
+      }
+    >
+      <div className="space-y-5">
+        {error && <Notice>{error}</Notice>}
+        {success && <Notice tone="success">{success}</Notice>}
 
-        {error && (
-          <div className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400 font-medium text-left">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {success && (
-          <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-400 font-medium text-left">
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
-            <span>{success}</span>
-          </div>
-        )}
-
-        {/* Live Camera View with Face Target Guide */}
-        <div className="relative aspect-video w-full overflow-hidden rounded-2xl border-2 border-indigo-500/40 bg-black shadow-inner">
+        <div className="relative aspect-video w-full overflow-hidden rounded-md border border-slate-600 bg-black">
           <Webcam
             audio={false}
             ref={webcamRef}
@@ -82,10 +78,14 @@ export const StudentLogin = () => {
             videoConstraints={{ facingMode: 'user', width: 1280, height: 720 }}
             className="h-full w-full object-cover"
           />
-
-          {/* Oval Face Guide Overlay */}
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="h-48 w-36 rounded-full border-2 border-dashed border-indigo-400/60 shadow-lg shadow-indigo-500/20 animate-pulse" />
+          {/* Scan-frame corners */}
+          <div className="pointer-events-none absolute inset-0 grid place-items-center" aria-hidden="true">
+            <div className="relative h-[72%] aspect-[3/4] max-w-[48%]">
+              <i className="absolute left-0 top-0 h-6 w-6 rounded-tl-md border-l-2 border-t-2 border-indigo-400" />
+              <i className="absolute right-0 top-0 h-6 w-6 rounded-tr-md border-r-2 border-t-2 border-indigo-400" />
+              <i className="absolute bottom-0 left-0 h-6 w-6 rounded-bl-md border-b-2 border-l-2 border-indigo-400" />
+              <i className="absolute bottom-0 right-0 h-6 w-6 rounded-br-md border-b-2 border-r-2 border-indigo-400" />
+            </div>
           </div>
         </div>
 
@@ -98,16 +98,9 @@ export const StudentLogin = () => {
           className="w-full"
           icon={ScanFace}
         >
-          {loading ? 'Analyzing Facial Features...' : 'Authenticate with Face-ID'}
+          {loading ? 'Matching your face…' : 'Sign in with face'}
         </Button>
-
-        <div className="border-t border-slate-800 pt-5 text-center text-xs text-slate-400">
-          Not recognized or new student?{' '}
-          <Link to="/student/register" className="font-semibold text-indigo-400 hover:text-indigo-300">
-            Register face &amp; voice profile
-          </Link>
-        </div>
       </div>
-    </div>
+    </AuthShell>
   )
 }

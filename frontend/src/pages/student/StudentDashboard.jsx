@@ -5,14 +5,10 @@ import { Button } from '../../components/common/Button'
 import { LoadingSpinner } from '../../components/common/LoadingSpinner'
 import { SubjectCard } from '../../components/subjects/SubjectCard'
 import { EnrollModal } from '../../components/dialogs/EnrollModal'
-import {
-  GraduationCap,
-  PlusCircle,
-  BookOpen,
-  CheckCircle,
-  CalendarDays,
-  Percent,
-} from 'lucide-react'
+import { PageHeader } from '../../components/common/PageHeader'
+import { EmptyState } from '../../components/common/EmptyState'
+import { Notice } from '../../components/common/Notice'
+import { GraduationCap, PlusCircle } from 'lucide-react'
 
 export const StudentDashboard = () => {
   const { user } = useAuth()
@@ -55,104 +51,48 @@ export const StudentDashboard = () => {
   const overallRate = totalClasses > 0 ? Math.round((totalAttended / totalClasses) * 100) : 0
 
   return (
-    <div className="space-y-8 py-6">
-      {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Welcome, {user?.name}
-          </h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Track your enrolled courses and view your attendance records.
-          </p>
-        </div>
+    <div className="space-y-10 py-6">
+      <PageHeader eyebrow="Student dashboard" title={`Hello, ${user?.name ?? ''}`} description="Your subjects and how often you have been marked present.">
+        <Button variant="primary" onClick={() => setIsEnrollModalOpen(true)} icon={PlusCircle}>
+          Enrol in subject
+        </Button>
+      </PageHeader>
 
-        <div className="flex items-center gap-3">
-          <Button
-            variant="primary"
-            onClick={() => setIsEnrollModalOpen(true)}
-            icon={PlusCircle}
-          >
-            Enroll in Subject
-          </Button>
-        </div>
-      </div>
+      {toastMessage && <Notice tone="success">{toastMessage}</Notice>}
 
-      {toastMessage && (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-400 font-medium">
-          <CheckCircle className="h-4 w-4 shrink-0" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Enrolled Courses
-            </span>
-            <BookOpen className="h-5 w-5 text-indigo-400" />
+      {/* Overall figures: one ruled strip, not three cards */}
+      <dl className="rise grid grid-cols-3 divide-x divide-slate-800 border-y border-slate-800" style={{ '--i': 1 }}>
+        {[
+          ['Subjects', subjects.length, 'text-slate-50'],
+          ['Sessions held', totalClasses, 'text-slate-50'],
+          ['Overall attendance', `${overallRate}%`, overallRate >= 75 || totalClasses === 0 ? 'text-emerald-300' : 'text-amber-300'],
+        ].map(([label, value, tone]) => (
+          <div key={label} className="px-3 py-5 sm:px-6">
+            <dd className={`num text-3xl font-semibold sm:text-5xl ${tone}`}>{value}</dd>
+            <dt className="eyebrow mt-2">{label}</dt>
           </div>
-          <div className="mt-3 text-3xl font-bold text-white">{subjects.length}</div>
-        </div>
+        ))}
+      </dl>
 
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Total Sessions Held
-            </span>
-            <CalendarDays className="h-5 w-5 text-pink-400" />
-          </div>
-          <div className="mt-3 text-3xl font-bold text-white">{totalClasses}</div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Overall Attendance
-            </span>
-            <Percent className="h-5 w-5 text-emerald-400" />
-          </div>
-          <div className="mt-3 text-3xl font-bold text-emerald-400">{overallRate}%</div>
-        </div>
-      </div>
-
-      {/* Enrolled Courses Grid */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-bold text-white">Your Enrolled Subjects</h2>
+      <section className="space-y-4" aria-labelledby="my-subjects">
+        <h2 id="my-subjects" className="text-xl font-bold text-slate-50">Your subjects</h2>
 
         {loading ? (
-          <LoadingSpinner text="Loading courses..." />
+          <LoadingSpinner text="Loading subjects" />
         ) : subjects.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-slate-800 bg-slate-900/40 p-12 text-center">
-            <GraduationCap className="mx-auto h-12 w-12 text-slate-600 mb-3" />
-            <h3 className="text-lg font-bold text-white">No Enrolled Courses</h3>
-            <p className="mt-1 text-sm text-slate-400">
-              Ask your teacher for a subject code or scan their QR code to enroll.
-            </p>
-            <Button
-              variant="primary"
-              className="mt-5"
-              onClick={() => setIsEnrollModalOpen(true)}
-              icon={PlusCircle}
-            >
-              Enroll in Subject
-            </Button>
-          </div>
+          <EmptyState icon={GraduationCap} title="You haven’t joined a subject" body="Ask your teacher for the subject code, or scan their QR code.">
+            <Button onClick={() => setIsEnrollModalOpen(true)} icon={PlusCircle}>Enrol in subject</Button>
+          </EmptyState>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {subjects.map((sub) => (
-              <SubjectCard
-                key={sub.subject_id}
-                subject={sub}
-                isTeacher={false}
-                onUnenroll={handleUnenroll}
-              />
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {subjects.map((sub, i) => (
+              <li key={sub.subject_id} className="rise" style={{ '--i': i + 2 }}>
+                <SubjectCard subject={sub} isTeacher={false} onUnenroll={handleUnenroll} />
+              </li>
             ))}
-          </div>
+          </ul>
         )}
-      </div>
+      </section>
 
       <EnrollModal
         isOpen={isEnrollModalOpen}
@@ -162,4 +102,3 @@ export const StudentDashboard = () => {
     </div>
   )
 }
-

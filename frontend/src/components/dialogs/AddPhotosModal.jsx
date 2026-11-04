@@ -54,13 +54,13 @@ export const AddPhotosModal = ({ isOpen, onClose, photos, setPhotos }) => {
     >
       <div className="space-y-5">
         {/* Tab Toggle */}
-        <div className="flex rounded-xl border border-slate-800 bg-slate-950 p-1">
+        <div className="flex rounded-md border border-slate-700 bg-slate-950 p-1">
           <button
             type="button"
             onClick={() => setActiveTab('camera')}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold transition ${
+            className={`flex flex-1 items-center justify-center gap-2 rounded-sm py-2 text-xs font-semibold transition-colors ${
               activeTab === 'camera'
-                ? 'bg-indigo-600 text-white shadow-md'
+                ? 'bg-indigo-400 text-slate-950'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -70,9 +70,9 @@ export const AddPhotosModal = ({ isOpen, onClose, photos, setPhotos }) => {
           <button
             type="button"
             onClick={() => setActiveTab('upload')}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold transition ${
+            className={`flex flex-1 items-center justify-center gap-2 rounded-sm py-2 text-xs font-semibold transition-colors ${
               activeTab === 'upload'
-                ? 'bg-indigo-600 text-white shadow-md'
+                ? 'bg-indigo-400 text-slate-950'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -84,7 +84,7 @@ export const AddPhotosModal = ({ isOpen, onClose, photos, setPhotos }) => {
         {/* Camera Tab Content */}
         {activeTab === 'camera' && (
           <div className="flex flex-col items-center">
-            <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-slate-800 bg-black shadow-inner">
+            <div className="relative aspect-video w-full overflow-hidden rounded-md border border-slate-600 bg-black">
               <Webcam
                 audio={false}
                 ref={webcamRef}
@@ -103,19 +103,19 @@ export const AddPhotosModal = ({ isOpen, onClose, photos, setPhotos }) => {
 
         {/* Upload Tab Content */}
         {activeTab === 'upload' && (
-          <label className="flex aspect-video w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-700 bg-slate-950/60 p-6 transition hover:border-indigo-500 hover:bg-slate-950">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-400">
-              <Upload className="h-7 w-7" />
+          <label className="flex aspect-video w-full cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-slate-600 p-6 transition-colors focus-within:outline-2 focus-within:outline-indigo-400 hover:border-indigo-400 hover:bg-slate-800">
+            <div className="text-indigo-400">
+              <Upload className="h-7 w-7" aria-hidden="true" />
             </div>
             <p className="mt-3 text-sm font-semibold text-slate-200">
               Click to browse or drag &amp; drop photos
             </p>
-            <p className="mt-1 text-xs text-slate-500">Supports JPG, PNG, WEBP (Multiple files allowed)</p>
+            <p className="mt-1 text-xs text-slate-400">Supports JPG, PNG, WEBP (Multiple files allowed)</p>
             <input
               type="file"
               multiple
               accept="image/*"
-              className="hidden"
+              className="sr-only"
               onChange={handleFileUpload}
             />
           </label>
@@ -141,23 +141,22 @@ export const AddPhotosModal = ({ isOpen, onClose, photos, setPhotos }) => {
               {photos.map((photo, index) => (
                 <div
                   key={index}
-                  className="group relative aspect-video overflow-hidden rounded-xl border border-slate-800 bg-slate-950"
+                  className="group relative aspect-video overflow-hidden rounded-md border border-slate-700 bg-slate-950"
                 >
                   <img
                     src={photo.previewUrl}
                     alt={`Classroom ${index + 1}`}
                     className="h-full w-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-slate-950/60 opacity-0 transition group-hover:opacity-100 flex items-center justify-center">
-                    <button
-                      type="button"
-                      onClick={() => handleRemovePhoto(index)}
-                      className="rounded-lg bg-red-600/80 p-1.5 text-white hover:bg-red-600"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <span className="absolute bottom-1 left-1 rounded bg-slate-900/90 px-1.5 py-0.5 text-[10px] font-bold text-slate-300">
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePhoto(index)}
+                    aria-label={`Remove photo ${index + 1}`}
+                    className="absolute right-1 top-1 rounded-sm bg-slate-950/90 p-1 text-slate-300 transition-colors hover:bg-red-500 hover:text-white"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="absolute bottom-1 left-1 rounded-sm bg-slate-950/90 px-1.5 py-0.5 num text-[0.6875rem] text-slate-300">
                     #{index + 1}
                   </span>
                 </div>

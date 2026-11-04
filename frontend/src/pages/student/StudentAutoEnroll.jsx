@@ -4,7 +4,8 @@ import { useAuth } from '../../context/AuthContext'
 import { subjectService } from '../../services/subjectService'
 import { Button } from '../../components/common/Button'
 import { LoadingSpinner } from '../../components/common/LoadingSpinner'
-import { AlertCircle, BookOpen, CheckCircle, GraduationCap } from 'lucide-react'
+import { Notice } from '../../components/common/Notice'
+import { AlertCircle, BookOpen, GraduationCap } from 'lucide-react'
 
 export const StudentAutoEnroll = () => {
   const { inviteCode: pathCode } = useParams()
@@ -38,15 +39,15 @@ export const StudentAutoEnroll = () => {
   const returnPath = `/join/${encodeURIComponent(inviteCode)}`
   if (error && !invitation) {
     return <JoinCard title="Invalid invitation" icon={AlertCircle}>
-      <Message icon={AlertCircle} tone="error">{error}</Message>
+      <Message tone="error">{error}</Message>
     </JoinCard>
   }
   if (!isAuthenticated) {
     return <JoinCard title="Subject invitation" icon={BookOpen}>
       <p className="text-sm text-slate-300">Sign in or register as a student to join this subject.</p>
       <div className="flex gap-3 pt-2">
-        <Link className="flex-1 rounded-xl bg-indigo-600 py-3 text-center text-sm font-semibold text-white" to={`/student/login?return=${encodeURIComponent(returnPath)}`}>Student login</Link>
-        <Link className="flex-1 rounded-xl border border-slate-700 py-3 text-center text-sm font-semibold text-slate-300" to={`/student/register?return=${encodeURIComponent(returnPath)}`}>Register</Link>
+        <Link className="flex-1 rounded-md bg-indigo-400 py-2.5 text-center text-sm font-semibold text-slate-950 hover:bg-indigo-300" to={`/student/login?return=${encodeURIComponent(returnPath)}`}>Student login</Link>
+        <Link className="flex-1 rounded-md border border-slate-600 py-2.5 text-center text-sm font-semibold text-slate-200 hover:bg-slate-800" to={`/student/register?return=${encodeURIComponent(returnPath)}`}>Register</Link>
       </div>
     </JoinCard>
   }
@@ -73,28 +74,31 @@ export const StudentAutoEnroll = () => {
   }
 
   return <JoinCard title="Join subject" icon={GraduationCap}>
-    {error ? <Message icon={AlertCircle} tone="error">{error}</Message> : null}
-    {success ? <Message icon={CheckCircle} tone="success">{success}</Message> : null}
-    {invitation ? <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/10 p-5 text-left">
+    {error ? <Message tone="error">{error}</Message> : null}
+    {success ? <Message tone="success">{success}</Message> : null}
+    {invitation ? <div className="rounded-md border border-slate-700 bg-slate-950 p-5 text-left">
       <h2 className="text-xl font-bold text-white">{invitation.subject_name}</h2>
       <p className="mt-1 text-sm text-slate-300">Section {invitation.section} · Teacher: {invitation.teacher_name}</p>
-      <p className="mt-2 font-mono text-xs text-indigo-300">Code: {invitation.subject_code}</p>
+      <p className="num mt-3 text-xs text-indigo-300">Code: {invitation.subject_code}</p>
     </div> : null}
     <Button variant="primary" loading={joining} disabled={!invitation || Boolean(success)} onClick={handleJoin} className="w-full">Join Subject</Button>
   </JoinCard>
 }
 
 function JoinCard({ title, icon: Icon, children }) {
-  return <div className="flex min-h-[calc(100vh-12rem)] items-center justify-center px-4 py-12">
-    <div className="w-full max-w-md space-y-6 rounded-3xl border border-slate-800 bg-slate-900/90 p-8 text-center shadow-2xl">
-      <Icon className="mx-auto h-12 w-12 text-indigo-400" />
-      <h1 className="text-2xl font-bold text-white">{title}</h1>
-      {children}
+  return (
+    <div className="mx-auto flex min-h-[calc(100vh-12rem)] max-w-md items-center py-12">
+      <div className="sheet rise w-full space-y-6 p-7 sm:p-8">
+        <div className="flex items-center gap-3 border-b border-slate-800 pb-5">
+          <Icon className="h-5 w-5 text-indigo-400" aria-hidden="true" />
+          <h1 className="text-xl font-bold text-slate-50">{title}</h1>
+        </div>
+        {children}
+      </div>
     </div>
-  </div>
+  )
 }
 
-function Message({ icon: Icon, tone, children }) {
-  const color = tone === 'success' ? 'text-emerald-400' : 'text-red-400'
-  return <div className={`flex items-center gap-2 rounded-xl border p-3 text-left text-sm ${color}`}><Icon className="h-4 w-4 shrink-0" />{children}</div>
+function Message({ tone, children }) {
+  return <Notice tone={tone}>{children}</Notice>
 }

@@ -1,38 +1,40 @@
-import React from 'react'
+import React, { useId } from 'react'
 
-export const Input = ({
-  label,
-  id,
-  type = 'text',
-  error,
-  icon: Icon,
-  className = '',
-  ...props
-}) => {
+export const Input = ({ label, id, type = 'text', error, hint, icon: Icon, className = '', ...props }) => {
+  const auto = useId()
+  const fieldId = id || auto
+  const describedBy = error ? `${fieldId}-err` : hint ? `${fieldId}-hint` : undefined
+
   return (
     <div className="w-full">
       {label && (
-        <label htmlFor={id} className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <label htmlFor={fieldId} className="eyebrow mb-2 block">
           {label}
         </label>
       )}
-      <div className="relative rounded-xl">
+      <div className="relative">
         {Icon && (
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
-            <Icon className="h-4 w-4" />
-          </div>
+          <Icon
+            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+            aria-hidden="true"
+          />
         )}
         <input
-          id={id}
+          id={fieldId}
           type={type}
-          className={`block w-full rounded-xl border border-slate-700/80 bg-slate-900/90 py-2.5 text-sm text-slate-100 placeholder-slate-500 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-50 ${
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+          className={`block min-h-11 w-full rounded-md border bg-slate-950 py-2.5 pr-3.5 text-sm text-slate-50 placeholder-slate-500 transition-colors hover:border-slate-500 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400 disabled:cursor-not-allowed disabled:opacity-50 ${
             Icon ? 'pl-10' : 'pl-3.5'
-          } ${error ? 'border-red-500/80 focus:border-red-500 focus:ring-red-500/20' : ''} ${className}`}
+          } ${error ? 'border-red-400' : 'border-slate-600'} ${className}`}
           {...props}
         />
       </div>
-      {error && <p className="mt-1.5 text-xs text-red-400 font-medium">{error}</p>}
+      {error ? (
+        <p id={`${fieldId}-err`} className="mt-1.5 text-xs font-medium text-red-300">{error}</p>
+      ) : hint ? (
+        <p id={`${fieldId}-hint`} className="mt-1.5 text-xs text-slate-400">{hint}</p>
+      ) : null}
     </div>
   )
 }
-
