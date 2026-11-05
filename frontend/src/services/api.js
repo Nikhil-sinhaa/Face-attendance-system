@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+import { API_BASE_URL } from "./config";
 
 // Storage key constants — defined once to avoid magic strings throughout the app
 const TOKEN_STORAGE_KEY = 'facevplus_token'
