@@ -8,6 +8,7 @@ python-multipart
 numpy
 pandas
 scikit-learn
+segno>=1.6.0
 setuptools==80.9.0
 
 # Face recognition
