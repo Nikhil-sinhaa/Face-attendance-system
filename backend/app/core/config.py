@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     ADMIN_EMAIL: str = ""
     ADMIN_PASSWORD: str = ""
 
+    # Public URL of the frontend, used to build student invite links / QR codes
+    FRONTEND_URL: str = "http://localhost:5173"
+
     # CORS
     CORS_ORIGINS: str = (
         "http://localhost:5173,"
