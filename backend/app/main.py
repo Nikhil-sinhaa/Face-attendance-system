@@ -1,8 +1,18 @@
+import logging
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from backend.app.core.config import settings
-from backend.app.api.routes import auth, subjects, attendance
+from backend.app.api.routes import auth, subjects, attendance, admin
+
+logger = logging.getLogger("uvicorn.error")
+for _name, _hint in (
+    ("GOOGLE_CLIENT_ID", "college Google sign-in will not work"),
+    ("ADMIN_EMAIL", "admin login will not work"),
+    ("ADMIN_PASSWORD", "admin login will not work"),
+):
+    if not getattr(settings, _name):
+        logger.warning("%s is not set in backend/.env: %s", _name, _hint)
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -24,6 +34,7 @@ app.include_router(auth.router, prefix="/api")
 app.include_router(subjects.router, prefix="/api")
 app.include_router(subjects.invitation_router, prefix="/api")
 app.include_router(attendance.router, prefix="/api")
+app.include_router(admin.router, prefix="/api")
 
 
 @app.get("/api/health")

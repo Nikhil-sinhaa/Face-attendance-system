@@ -116,7 +116,7 @@ export const AttendanceReviewModal = ({
                   onClick={() => toggleStatus(student.student_id)}
                 >
                   <td className="px-4 py-3 font-medium text-slate-50">{student.name}</td>
-                  <td className="num px-4 py-3 text-slate-400">{student.student_id}</td>
+                  <td className="num px-4 py-3 text-slate-400">{student.roll_no || student.student_id}</td>
                   <td className="hidden px-4 py-3 text-slate-400 sm:table-cell">{student.source || '—'}</td>
                   <td className="px-4 py-3 text-right">
                     <button

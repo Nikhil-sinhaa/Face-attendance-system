@@ -40,7 +40,7 @@ export const TeacherStudentAttendanceHistory = () => {
       <PageHeader
         eyebrow="Student attendance history"
         title={data.student.name}
-        description={`ID ${data.student.student_id} · ${data.subject.name} (${data.subject.subject_code})`}
+        description={`Roll no. ${data.student.roll_no || data.student.student_id} · ${data.subject.name} (${data.subject.subject_code})`}
       />
 
       <dl className="grid grid-cols-2 divide-slate-800 border-y border-slate-800 sm:grid-cols-4 sm:divide-x">

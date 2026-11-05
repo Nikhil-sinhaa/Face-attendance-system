@@ -56,6 +56,21 @@ export const subjectService = {
     return res.data
   },
 
+  async getJoinRequests() {
+    const res = await api.get('/subjects/requests')
+    return res.data
+  },
+
+  async approveJoinRequest(subjectId, studentId) {
+    const res = await api.post(`/subjects/${subjectId}/requests/${studentId}/approve`)
+    return res.data
+  },
+
+  async rejectJoinRequest(subjectId, studentId) {
+    const res = await api.post(`/subjects/${subjectId}/requests/${studentId}/reject`)
+    return res.data
+  },
+
   async getMyEnrolledSubjects() {
     const res = await api.get('/subjects/student/my-subjects')
     return res.data

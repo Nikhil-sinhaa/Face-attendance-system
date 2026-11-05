@@ -78,6 +78,10 @@ Open `.env` in any text editor and fill in your credentials:
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your-supabase-anon-or-service-key
 JWT_SECRET=your-random-32-character-secret-key
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+ALLOWED_EMAIL_DOMAIN=iiitdwd.ac.in
+ADMIN_EMAIL=admin@iiitdwd.ac.in
+ADMIN_PASSWORD=choose-a-strong-admin-password
 ```
 
 #### Step 6: Start the Backend Server
@@ -116,6 +120,7 @@ cp .env.example .env
 Ensure `.env` contains:
 ```ini
 VITE_API_URL=http://127.0.0.1:8000
+VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 ```
 
 #### Step 4: Start the Frontend Development Server
@@ -129,7 +134,8 @@ npm run dev
 ## Features Summary
 
 ### Teacher Portal
-- **Teacher Authentication**: Secure registration and password login using bcrypt hashing and JWT tokens.
+- **Teacher Authentication**: Registration needs an `@iiitdwd.ac.in` Google account and the admin's approval; then password login using bcrypt hashing and JWT tokens.
+- **Join Requests**: Students ask to join a subject; the subject's teacher approves or rejects each request from the **Requests** tab.
 - **Subject Management**: Create, view, and delete courses with real-time student counts.
 - **Dynamic QR & Share Links**: Generate printable QR codes and shareable links (`/student/enroll?code=CS101`) for instant enrollment.
 - **Batch Face Attendance**: Live camera snapshots or photo uploads analyzed simultaneously by Dlib against student facial descriptors.
@@ -138,8 +144,18 @@ npm run dev
 
 ### Student Portal
 - **Face-ID Authentication**: Live camera facial recognition login against registered 128D descriptors.
+- **College-only Registration**: Sign in with an `@iiitdwd.ac.in` Google account (for example `24bcs086@iiitdwd.ac.in`); the roll number is taken from the email.
 - **Biometric Enrollment**: One-time registration for face snapshots and voice utterances.
-- **Course Management**: Join classes via code/QR code and view real-time course attendance percentages.
+- **Course Management**: Request to join classes via code/QR code. Once the teacher approves, view real-time course attendance percentages.
+
+### Admin Portal
+- **Teacher Approval**: Sign in at `/admin/login` with `ADMIN_EMAIL` / `ADMIN_PASSWORD` to approve or reject new teachers.
+
+### Verification Flow
+1. A teacher registers with a college Google account. The account is **pending** and cannot sign in until the admin approves it.
+2. A student registers with a college Google account plus a face photo. The account is **pending**.
+3. The student requests to join a subject. That subject's teacher approves or rejects the request. The first approval verifies the student's account.
+4. Only approved students appear in rosters and face/voice attendance.
 
 ---
 
@@ -196,11 +212,19 @@ facevplus-v2/
 
 Set up the following relational tables in your Supabase SQL Editor:
 
-1. **`teachers`**: `teacher_id` (PK), `username`, `password` (bcrypt hash), `name`.
-2. **`students`**: `student_id` (PK), `name`, `face_embedding` (128D array), `voice_embedding` (256D array).
+1. **`teachers`**: `teacher_id` (PK), `username`, `password` (bcrypt hash), `name`, `email` (unique), `status` (`pending` / `approved` / `rejected`).
+2. **`students`**: `student_id` (PK, generated), `name`, `email` (unique), `roll_no`, `status` (`pending` / `approved` / `rejected`), `face_embedding` (128D array), `voice_embedding` (256D array).
 3. **`subjects`**: `subject_id` (PK), `subject_code`, `name`, `section`, `teacher_id` (FK → `teachers`).
-4. **`subject_students`**: `subject_id` (FK), `student_id` (FK).
+4. **`subject_students`**: `subject_id` (FK), `student_id` (FK), `status` (`pending` / `approved` / `rejected`), `requested_at`.
 5. **`attendance_logs`**: `id` (PK), `timestamp`, `subject_id` (FK), `student_id` (FK), `is_present` (boolean).
+
+**Upgrading an existing database**: run `backend/migrations/001_verification.sql` once in the Supabase SQL Editor. It adds the columns above, marks all existing teachers, students and enrollments as `approved`, and makes every new row `pending`.
+
+### Google Sign-In Setup
+1. In Google Cloud Console, create an OAuth client ID of type **Web application**.
+2. Add `http://localhost:5173` (and your production URL) under **Authorized JavaScript origins**.
+3. Put the client ID in `backend/.env` as `GOOGLE_CLIENT_ID` and in `frontend/.env` as `VITE_GOOGLE_CLIENT_ID`.
+4. The college accounts must be Google Workspace accounts of `iiitdwd.ac.in`. The backend rejects any token without the matching `hd` claim, so personal Gmail accounts cannot register.
 
 ---
 
@@ -211,7 +235,7 @@ To verify that authentication tokens, route handlers, and QR code generations ar
 1. Make sure your virtual environment is active in the `backend` folder.
 2. Run pytest:
    ```bash
-   pytest tests/test_backend.py -v
+   pytest tests -v
    ```
 
 ---

@@ -22,6 +22,14 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
+    # College-only access (Google Sign-In)
+    GOOGLE_CLIENT_ID: str = ""
+    ALLOWED_EMAIL_DOMAIN: str = "iiitdwd.ac.in"
+
+    # Admin account (approves teacher registrations)
+    ADMIN_EMAIL: str = ""
+    ADMIN_PASSWORD: str = ""
+
     # CORS
     CORS_ORIGINS: str = (
         "http://localhost:5173,"

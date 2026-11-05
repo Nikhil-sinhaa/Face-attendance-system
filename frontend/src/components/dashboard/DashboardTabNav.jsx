@@ -1,13 +1,14 @@
 import React, { useRef } from 'react'
-import { ScanFace, BookOpen, CalendarDays } from 'lucide-react'
+import { ScanFace, BookOpen, CalendarDays, UserCheck } from 'lucide-react'
 
 const TABS = [
   { id: 'take_attendance', label: 'Take attendance', Icon: ScanFace },
   { id: 'manage_subjects', label: 'Subjects', Icon: BookOpen },
+  { id: 'join_requests', label: 'Requests', Icon: UserCheck },
   { id: 'attendance_records', label: 'Records', Icon: CalendarDays },
 ]
 
-export const DashboardTabNav = ({ currentTab, onTabChange }) => {
+export const DashboardTabNav = ({ currentTab, onTabChange, pendingCount = 0 }) => {
   const listRef = useRef(null)
 
   // WAI-ARIA tabs pattern: arrow keys move between tabs, only the active tab is in the Tab order
@@ -45,6 +46,11 @@ export const DashboardTabNav = ({ currentTab, onTabChange }) => {
         >
           <Icon className={`hidden h-4 w-4 sm:block ${active ? 'text-indigo-400' : ''}`} aria-hidden="true" />
           {label}
+          {id === 'join_requests' && pendingCount > 0 && (
+            <span className="num rounded-sm bg-amber-400 px-1.5 text-[0.6875rem] font-semibold text-slate-950" aria-label={`${pendingCount} pending`}>
+              {pendingCount}
+            </span>
+          )}
         </button>
       )
     })}

@@ -18,3 +18,5 @@ git+https://github.com/ageitgey/face_recognition_models.git
 # Supabase and authentication
 supabase==2.18.1
 bcrypt
+google-auth
+requests

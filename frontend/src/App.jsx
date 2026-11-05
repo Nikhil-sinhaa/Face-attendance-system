@@ -16,6 +16,8 @@ import { StudentLogin } from './pages/student/StudentLogin'
 import { StudentRegister } from './pages/student/StudentRegister'
 import { StudentDashboard } from './pages/student/StudentDashboard'
 import { StudentAutoEnroll } from './pages/student/StudentAutoEnroll'
+import { AdminLogin } from './pages/admin/AdminLogin'
+import { AdminDashboard } from './pages/admin/AdminDashboard'
 
 // Protected Route Guard for Teachers
 const TeacherRoute = ({ children }) => {
@@ -37,6 +39,16 @@ const StudentRoute = ({ children }) => {
   return children
 }
 
+// Protected Route Guard for the Admin
+const AdminRoute = ({ children }) => {
+  const { isAuthenticated, isAdmin, loading } = useAuth()
+  if (loading) return <LoadingSpinner text="Checking authentication..." />
+  if (!isAuthenticated || !isAdmin) {
+    return <Navigate to="/admin/login" replace />
+  }
+  return children
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -49,6 +61,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/teacher/login" element={<TeacherLogin />} />
               <Route path="/teacher/register" element={<TeacherRegister />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/student/login" element={<StudentLogin />} />
               <Route path="/student/register" element={<StudentRegister />} />
               <Route path="/student/enroll" element={<StudentAutoEnroll />} />
@@ -70,6 +83,16 @@ function App() {
               <Route
                 path="/teacher/subjects/:subjectId/students/:studentId"
                 element={<TeacherRoute><TeacherStudentAttendanceHistory /></TeacherRoute>}
+              />
+
+              {/* Protected Admin Routes */}
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                }
               />
 
               {/* Protected Student Routes */}

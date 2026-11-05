@@ -22,6 +22,7 @@ from backend.app.services.db import (
     subject_repo,
     enrollment_repo,
     teacher_repo,
+    student_repo,
     attendance_repo,
 )
 
@@ -34,6 +35,52 @@ def _get_authorized_subject(subject_id: int, teacher_id: int):
     if not subject:
         raise HTTPException(status_code=404, detail="Subject not found or not assigned to you.")
     return subject
+
+
+def _request_to_join(student: UserPayload, subject: dict) -> dict:
+    """Create (or report) a pending join request for ``subject``.
+
+    Students are never enrolled directly: the subject's teacher must approve.
+    """
+    subject_id = subject["subject_id"]
+    current = enrollment_repo.get_enrollment_status(student.id, subject_id)
+
+    if current == "approved":
+        return {
+            "success": True,
+            "already_enrolled": True,
+            "pending": False,
+            "status": "approved",
+            "message": f"You are already enrolled in {subject['name']}.",
+            "subject": subject,
+        }
+
+    if current == "pending":
+        message = f"Your request to join {subject['name']} is already waiting for the teacher's approval."
+    else:
+        if current == "rejected":
+            # Allow asking again after a rejection.
+            enrollment_repo.set_enrollment_status(student.id, subject_id, "pending")
+        else:
+            try:
+                enrollment_repo.enroll_student(student.id, subject_id)
+            except ValueError:
+                pass  # a concurrent request already created it
+        teacher = teacher_repo.get_teacher_by_id(subject["teacher_id"])
+        teacher_name = teacher["name"] if teacher else "the teacher"
+        message = (
+            f"Join request for {subject['name']} sent to {teacher_name}. "
+            "You will be enrolled once they approve it."
+        )
+
+    return {
+        "success": True,
+        "already_enrolled": False,
+        "pending": True,
+        "status": "pending",
+        "message": message,
+        "subject": subject,
+    }
 
 
 @router.get("", response_model=List[SubjectResponse])
@@ -79,15 +126,7 @@ def enroll_student_manual(
     if not subject:
         raise HTTPException(status_code=404, detail="Invalid subject code. Course not found.")
 
-    try:
-        enrollment_repo.enroll_student(student.id, subject["subject_id"])
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    return {
-        "message": f"Successfully enrolled in {subject['name']} ({subject['subject_code']}).",
-        "subject": subject,
-    }
+    return _request_to_join(student, subject)
 
 
 @invitation_router.get("/{invite_code}", response_model=InvitationResponse)
@@ -116,30 +155,60 @@ def join_subject(
     if not subject:
         raise HTTPException(status_code=404, detail="This invitation is invalid or expired.")
 
-    if enrollment_repo.is_student_enrolled(student.id, subject["subject_id"]):
-        return {
-            "success": True,
-            "already_enrolled": True,
-            "message": f"You are already enrolled in {subject['name']}.",
-            "subject": subject,
-        }
+    return _request_to_join(student, subject)
 
-    try:
-        enrollment_repo.enroll_student(student.id, subject["subject_id"])
-    except ValueError:
-        return {
-            "success": True,
-            "already_enrolled": True,
-            "message": f"You are already enrolled in {subject['name']}.",
-            "subject": subject,
-        }
 
-    return {
-        "success": True,
-        "already_enrolled": False,
-        "message": f"Successfully enrolled in {subject['name']} ({subject['subject_code']}).",
-        "subject": subject,
-    }
+@router.get("/requests")
+def get_join_requests(teacher: UserPayload = Depends(require_teacher)):
+    """Pending student join requests across all of the teacher's subjects."""
+    rows = enrollment_repo.get_pending_requests_for_teacher(teacher.id)
+    result = []
+    for row in rows:
+        student = row.get("students") or {}
+        subject = row.get("subjects") or {}
+        result.append(
+            {
+                "student_id": row["student_id"],
+                "subject_id": row["subject_id"],
+                "name": student.get("name", "Unknown"),
+                "roll_no": student.get("roll_no"),
+                "email": student.get("email"),
+                "account_status": student.get("status"),
+                "subject_code": subject.get("subject_code", ""),
+                "subject_name": subject.get("name", ""),
+                "section": subject.get("section", ""),
+                "requested_at": row.get("requested_at"),
+            }
+        )
+    return result
+
+
+@router.post("/{subject_id}/requests/{student_id}/approve")
+def approve_join_request(
+    subject_id: int,
+    student_id: int,
+    teacher: UserPayload = Depends(require_teacher),
+):
+    _get_authorized_subject(subject_id, teacher.id)
+    if enrollment_repo.get_enrollment_status(student_id, subject_id) is None:
+        raise HTTPException(status_code=404, detail="Join request not found.")
+    enrollment_repo.set_enrollment_status(student_id, subject_id, "approved")
+    # The first approval from any teacher also verifies the student's account.
+    student_repo.approve_student_if_pending(student_id)
+    return {"success": True, "message": "Student approved and enrolled."}
+
+
+@router.post("/{subject_id}/requests/{student_id}/reject")
+def reject_join_request(
+    subject_id: int,
+    student_id: int,
+    teacher: UserPayload = Depends(require_teacher),
+):
+    _get_authorized_subject(subject_id, teacher.id)
+    if enrollment_repo.get_enrollment_status(student_id, subject_id) is None:
+        raise HTTPException(status_code=404, detail="Join request not found.")
+    enrollment_repo.set_enrollment_status(student_id, subject_id, "rejected")
+    return {"success": True, "message": "Join request rejected."}
 
 
 @router.get("/student/my-subjects")
@@ -163,7 +232,12 @@ def get_my_enrolled_subjects(student: UserPayload = Depends(require_student)):
         if not sub:
             continue
         sid = sub["subject_id"]
-        stat = stats_map.get(sid, {"total": 0, "attended": 0})
+        enrollment_status = node.get("status") or "approved"
+        stat = (
+            stats_map.get(sid, {"total": 0, "attended": 0})
+            if enrollment_status == "approved"
+            else {"total": 0, "attended": 0}
+        )
         total = stat["total"]
         attended = stat["attended"]
         rate = round((attended / total * 100), 1) if total > 0 else 0.0
@@ -174,6 +248,7 @@ def get_my_enrolled_subjects(student: UserPayload = Depends(require_student)):
                 "subject_code": sub["subject_code"],
                 "name": sub["name"],
                 "section": sub.get("section", ""),
+                "enrollment_status": enrollment_status,
                 "total_classes": total,
                 "attended_classes": attended,
                 "attendance_rate": rate,
@@ -241,7 +316,8 @@ def get_subject_attendance_register(
             if student_id in selected_session_logs
             else "Not recorded"
         )
-        identifier = str(student_id)
+        roll_no = student.get("roll_no")
+        identifier = f"{student_id} {roll_no or ''}".lower()
         if query and query not in name.lower() and query not in identifier:
             continue
         if attendance_status != "all" and current_status.lower() != attendance_status:
@@ -249,6 +325,7 @@ def get_subject_attendance_register(
         rows.append(
             {
                 "student_id": student_id,
+                "roll_no": roll_no,
                 "name": name,
                 "enrollment_status": "Enrolled",
                 "total_classes": total_classes,
@@ -312,6 +389,7 @@ def get_subject_student_attendance_history(
         "subject": subject,
         "student": {
             "student_id": student_id,
+            "roll_no": student.get("roll_no"),
             "name": student.get("name", "Unknown"),
             "enrollment_status": "Enrolled",
         },
@@ -370,8 +448,9 @@ def remove_subject(
 @router.get("/{subject_id}/students")
 def get_subject_students(
     subject_id: int,
-    user: UserPayload = Depends(get_current_user),
+    teacher: UserPayload = Depends(require_teacher),
 ):
+    _get_authorized_subject(subject_id, teacher.id)
     students = enrollment_repo.get_enrolled_students(subject_id)
     # Strip heavy embeddings for roster view
     clean_students = [

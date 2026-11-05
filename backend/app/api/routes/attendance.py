@@ -60,6 +60,7 @@ async def recognize_face_attendance(
         candidates.append(
             AttendanceCandidateResult(
                 student_id=sid,
+                roll_no=s.get("roll_no"),
                 name=s["name"],
                 status="Present" if is_present else "Absent",
                 source=", ".join(sources) if is_present else "-",
@@ -125,6 +126,7 @@ async def process_voice_attendance(
         candidates.append(
             AttendanceCandidateResult(
                 student_id=sid,
+                roll_no=s.get("roll_no"),
                 name=s["name"],
                 status="Present" if is_present else "Absent",
                 source=source_label,

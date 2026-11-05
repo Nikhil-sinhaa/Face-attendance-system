@@ -190,7 +190,7 @@ export const TeacherAttendanceRegister = () => {
                       {student.name}
                     </Link>
                   </td>
-                  <td className="attendance-register__id">{student.student_id}</td>
+                  <td className="attendance-register__id">{student.roll_no || student.student_id}</td>
                   <td>
                     <Badge variant="emerald">{student.enrollment_status}</Badge>
                   </td>

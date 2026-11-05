@@ -9,6 +9,7 @@ class AttendanceCandidateResult(BaseModel):
     source: str  # e.g. "Photo 1, Photo 2" or "Score: 0.82" or "-"
     is_present: bool
     has_voice_profile: Optional[bool] = None
+    roll_no: Optional[str] = None
 
 
 class FaceRecognitionResponse(BaseModel):

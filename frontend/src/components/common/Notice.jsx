@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle2 } from 'lucide-react'
 const tones = {
   error: { cls: 'border-red-400/40 bg-red-400/10 text-red-200', Icon: AlertCircle, role: 'alert' },
   success: { cls: 'border-emerald-400/40 bg-emerald-400/10 text-emerald-200', Icon: CheckCircle2, role: 'status' },
+  warning: { cls: 'border-amber-400/40 bg-amber-400/10 text-amber-200', Icon: AlertCircle, role: 'status' },
 }
 
 export const Notice = ({ tone = 'error', children, className = '' }) => {

@@ -39,13 +39,13 @@ export const EnrollModal = ({ isOpen, onClose, onEnrolled }) => {
     setSuccess('')
     try {
       const res = await subjectService.enrollStudent(trimmed)
-      setSuccess(res.message || 'Successfully enrolled!')
+      setSuccess(res.message || 'Join request sent.')
       setTimeout(() => {
         onEnrolled()
         onClose()
-      }, 1200)
+      }, 2200)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to enroll. Please check the code.')
+      setError(err.response?.data?.detail || 'Failed to send the request. Please check the code.')
     } finally {
       setLoading(false)
     }
@@ -55,8 +55,8 @@ export const EnrollModal = ({ isOpen, onClose, onEnrolled }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Enrol in subject"
-      subtitle="Enter the subject code provided by your teacher"
+      title="Request to join a subject"
+      subtitle="Enter the subject code provided by your teacher. They will approve your request."
       maxWidth="max-w-md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -80,7 +80,7 @@ export const EnrollModal = ({ isOpen, onClose, onEnrolled }) => {
             Cancel
           </Button>
           <Button type="submit" variant="primary" loading={loading} disabled={Boolean(success)}>
-            Enrol
+            Send request
           </Button>
         </div>
       </form>

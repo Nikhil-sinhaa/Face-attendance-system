@@ -44,7 +44,7 @@ export const StudentAutoEnroll = () => {
   }
   if (!isAuthenticated) {
     return <JoinCard title="Subject invitation" icon={BookOpen}>
-      <p className="text-sm text-slate-300">Sign in or register as a student to join this subject.</p>
+      <p className="text-sm text-slate-300">Sign in or register as a student to request to join this subject. The teacher approves each request.</p>
       <div className="flex gap-3 pt-2">
         <Link className="flex-1 rounded-md bg-indigo-400 py-2.5 text-center text-sm font-semibold text-slate-950 hover:bg-indigo-300" to={`/student/login?return=${encodeURIComponent(returnPath)}`}>Student login</Link>
         <Link className="flex-1 rounded-md border border-slate-600 py-2.5 text-center text-sm font-semibold text-slate-200 hover:bg-slate-800" to={`/student/register?return=${encodeURIComponent(returnPath)}`}>Register</Link>
@@ -64,16 +64,16 @@ export const StudentAutoEnroll = () => {
     setError('')
     try {
       const result = await subjectService.joinSubject(inviteCode)
-      setSuccess(result.message || 'You joined the subject successfully.')
-      setTimeout(() => navigate('/student/dashboard', { replace: true }), 1200)
+      setSuccess(result.message || 'Join request sent.')
+      setTimeout(() => navigate('/student/dashboard', { replace: true }), 2500)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Unable to join this subject.')
+      setError(err.response?.data?.detail || 'Unable to send the join request.')
     } finally {
       setJoining(false)
     }
   }
 
-  return <JoinCard title="Join subject" icon={GraduationCap}>
+  return <JoinCard title="Request to join" icon={GraduationCap}>
     {error ? <Message tone="error">{error}</Message> : null}
     {success ? <Message tone="success">{success}</Message> : null}
     {invitation ? <div className="rounded-md border border-slate-700 bg-slate-950 p-5 text-left">
@@ -81,7 +81,7 @@ export const StudentAutoEnroll = () => {
       <p className="mt-1 text-sm text-slate-300">Section {invitation.section} · Teacher: {invitation.teacher_name}</p>
       <p className="num mt-3 text-xs text-indigo-300">Code: {invitation.subject_code}</p>
     </div> : null}
-    <Button variant="primary" loading={joining} disabled={!invitation || Boolean(success)} onClick={handleJoin} className="w-full">Join Subject</Button>
+    <Button variant="primary" loading={joining} disabled={!invitation || Boolean(success)} onClick={handleJoin} className="w-full">Request to join</Button>
   </JoinCard>
 }
 

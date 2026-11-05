@@ -1,8 +1,14 @@
 import api from './api'
 
 export const authService = {
-  async registerTeacher({ username, name, password }) {
-    const res = await api.post('/auth/teacher/register', { username, name, password })
+  // Teacher accounts are created as "pending"; no token is returned until the admin approves.
+  async registerTeacher({ username, name, password, googleIdToken }) {
+    const res = await api.post('/auth/teacher/register', {
+      username,
+      name,
+      password,
+      google_id_token: googleIdToken,
+    })
     return res.data
   },
 
@@ -20,15 +26,20 @@ export const authService = {
     return res.data
   },
 
-  async registerStudent(studentId, name, faceBlob, voiceBlob) {
+  async registerStudent(googleIdToken, name, faceBlob, voiceBlob) {
     const form = new FormData()
-    form.append('student_id', studentId)
+    form.append('google_id_token', googleIdToken)
     form.append('name', name)
     form.append('face_file', faceBlob, 'face.jpg')
     if (voiceBlob) form.append('voice_file', voiceBlob, 'voice.wav')
     const res = await api.post('/auth/student/register', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
+    return res.data
+  },
+
+  async getMe() {
+    const res = await api.get('/auth/me')
     return res.data
   },
 

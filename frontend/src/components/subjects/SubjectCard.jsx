@@ -17,6 +17,8 @@ const actionBtn =
 export const SubjectCard = ({ subject, isTeacher = false, onShare, onDelete, onOpenRegister, onUnenroll }) => {
   const { name, subject_code, section, total_students, total_classes, attended_classes, attendance_rate } = subject
   const rate = Number(attendance_rate) || 0
+  const enrollmentStatus = isTeacher ? 'approved' : subject.enrollment_status || 'approved'
+  const approved = enrollmentStatus === 'approved'
 
   return (
     <article className="sheet flex h-full flex-col transition-colors hover:border-slate-600">
@@ -24,10 +26,20 @@ export const SubjectCard = ({ subject, isTeacher = false, onShare, onDelete, onO
         <div className="flex items-center gap-2">
           <Badge variant={isTeacher ? 'pink' : 'indigo'}>{subject_code}</Badge>
           {section && <span className="eyebrow">Sec {section}</span>}
+          {enrollmentStatus === 'pending' && <Badge variant="amber">Pending approval</Badge>}
+          {enrollmentStatus === 'rejected' && <Badge variant="red">Rejected</Badge>}
         </div>
         <h3 className="mt-3 text-xl font-bold leading-snug text-slate-50">{name}</h3>
 
-        <dl className="mt-6 grid grid-cols-2 gap-4">
+        {!approved && (
+          <p className="mt-6 text-sm text-slate-400">
+            {enrollmentStatus === 'pending'
+              ? 'Waiting for the teacher to approve your request. Attendance appears once you are approved.'
+              : 'The teacher declined this request. You can remove it and send a new one.'}
+          </p>
+        )}
+
+        {approved && <dl className="mt-6 grid grid-cols-2 gap-4">
           {isTeacher ? (
             <>
               <Stat value={total_students ?? 0} label="Students" />
@@ -39,9 +51,9 @@ export const SubjectCard = ({ subject, isTeacher = false, onShare, onDelete, onO
               <Stat value={total_classes > 0 ? `${rate}%` : '—'} label="Rate" />
             </>
           )}
-        </dl>
+        </dl>}
 
-        {!isTeacher && total_classes > 0 && (
+        {approved && !isTeacher && total_classes > 0 && (
           <div
             className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-800"
             role="progressbar"
@@ -83,7 +95,8 @@ export const SubjectCard = ({ subject, isTeacher = false, onShare, onDelete, onO
             onClick={() => onUnenroll(subject.subject_id, subject.name)}
             className="ml-auto inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-slate-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
           >
-            <LogOut className="h-3.5 w-3.5" aria-hidden="true" /> Unenroll
+            <LogOut className="h-3.5 w-3.5" aria-hidden="true" />{' '}
+            {enrollmentStatus === 'pending' ? 'Cancel request' : enrollmentStatus === 'rejected' ? 'Remove' : 'Unenroll'}
           </button>
         )}
       </div>

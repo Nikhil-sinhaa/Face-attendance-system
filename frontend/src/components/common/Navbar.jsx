@@ -11,6 +11,8 @@ export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth()
   const navigate = useNavigate()
   const isTeacher = user?.role === 'teacher'
+  const isAdmin = user?.role === 'admin'
+  const dashboardPath = isAdmin ? '/admin/dashboard' : isTeacher ? '/teacher/dashboard' : '/student/dashboard'
 
   const handleLogout = async () => {
     await logout()
@@ -35,7 +37,7 @@ export const Navbar = () => {
           {isAuthenticated ? (
             <>
               <NavLink
-                to={isTeacher ? '/teacher/dashboard' : '/student/dashboard'}
+                to={dashboardPath}
                 className={({ isActive }) =>
                   `${navLink} ${isActive ? 'text-indigo-300' : 'text-slate-300'}`
                 }
@@ -44,7 +46,7 @@ export const Navbar = () => {
               </NavLink>
               <div className="mx-1 hidden h-5 w-px bg-slate-700 sm:block" />
               <div className="hidden items-center gap-2 pr-1 sm:flex">
-                <span className={`h-2 w-2 rounded-full ${isTeacher ? 'bg-pink-400' : 'bg-emerald-400'}`} aria-hidden="true" />
+                <span className={`h-2 w-2 rounded-full ${isAdmin ? 'bg-indigo-400' : isTeacher ? 'bg-pink-400' : 'bg-emerald-400'}`} aria-hidden="true" />
                 <span className="max-w-40 truncate text-sm font-medium text-slate-100">{user?.name}</span>
                 <span className="eyebrow">{user?.role}</span>
               </div>

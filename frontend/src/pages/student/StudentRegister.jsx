@@ -7,11 +7,12 @@ import { Button } from '../../components/common/Button'
 import { Input } from '../../components/common/Input'
 import { Notice } from '../../components/common/Notice'
 import { AuthShell } from '../../components/common/AuthShell'
+import { CollegeGoogleButton } from '../../components/common/CollegeGoogleButton'
 import { Camera, Mic, Square, RefreshCw } from 'lucide-react'
 
 export const StudentRegister = () => {
   const [name, setName] = useState('')
-  const [studentId, setStudentId] = useState('')
+  const [googleIdentity, setGoogleIdentity] = useState(null)
   const [capturedPhotoUrl, setCapturedPhotoUrl] = useState(null)
   const [capturedPhotoBlob, setCapturedPhotoBlob] = useState(null)
 
@@ -98,15 +99,23 @@ export const StudentRegister = () => {
     }
   }
 
+  const handleGoogleChange = (identity) => {
+    setGoogleIdentity(identity)
+    setError('')
+    // Pre-fill the name from the Google profile unless the student already typed one.
+    if (identity && !name.trim()) setName(identity.name)
+  }
+
   // Submit registration
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!name.trim()) {
-      setError('Please enter your full name.')
+    if (loading) return
+    if (!googleIdentity) {
+      setError('Please sign in with your college Google account first.')
       return
     }
-    if (!/^[1-9]\d*$/.test(studentId.trim())) {
-      setError('Please enter your numeric registration or roll number.')
+    if (!name.trim()) {
+      setError('Please enter your full name.')
       return
     }
 
@@ -120,10 +129,10 @@ export const StudentRegister = () => {
     setSuccess('')
 
     try {
-      const data = await authService.registerStudent(studentId.trim(), name.trim(), capturedPhotoBlob, voiceBlob)
-      setSuccess(`Profile created! Welcome to FaceVPlus, ${data.user.name}.`)
+      const data = await authService.registerStudent(googleIdentity.credential, name.trim(), capturedPhotoBlob, voiceBlob)
+      setSuccess(`Profile created, ${data.user.name}. Join a subject and wait for your teacher to approve you.`)
       login(data.access_token, data.user)
-      setTimeout(() => navigate(returnPath, { replace: true }), 1500)
+      setTimeout(() => navigate(returnPath, { replace: true }), 2000)
     } catch (err) {
       setError(err.response?.data?.detail || 'Registration failed. Please try again.')
     } finally {
@@ -136,7 +145,7 @@ export const StudentRegister = () => {
       side="student"
       title="Register your face once."
       intro="After this you sign in by looking at the camera, and the teacher’s photo or voice roll call can recognise you."
-      points={['Your details', 'One clear face photo', 'Optional voice sample for roll call']}
+      points={['Sign in with your college Google account', 'One clear face photo', 'Your teacher approves you when you join their subject']}
       wide
       footer={
         <>
@@ -154,26 +163,26 @@ export const StudentRegister = () => {
         {error && <Notice>{error}</Notice>}
         {success && <Notice tone="success">{success}</Notice>}
 
-        <fieldset className="grid gap-4 sm:grid-cols-2">
+        <fieldset className="space-y-4">
           <legend className="eyebrow mb-4 flex items-center gap-2 text-slate-300"><span className="num text-indigo-400">01</span> Your details</legend>
-          <Input
-            label="Full name"
-            id="student_name"
-            placeholder="e.g. Raman Sharma"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-          <Input
-            label="Registration / roll no."
-            id="student_id"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            placeholder="e.g. 202600123"
-            value={studentId}
-            onChange={(e) => setStudentId(e.target.value.replace(/\D/g, ''))}
-            required
-          />
+          <CollegeGoogleButton identity={googleIdentity} onChange={handleGoogleChange} disabled={loading || Boolean(success)} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label="Full name"
+              id="student_name"
+              placeholder="e.g. Raman Sharma"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+            <Input
+              label="Roll no. (from your email)"
+              id="student_roll"
+              value={googleIdentity?.rollNo || ''}
+              placeholder="Sign in with Google first"
+              readOnly
+            />
+          </div>
         </fieldset>
 
         <section aria-labelledby="face-step">

@@ -3,6 +3,7 @@ import React from 'react'
 const sides = {
   teacher: { label: 'Teacher portal', dot: 'bg-pink-400', text: 'text-pink-300' },
   student: { label: 'Student portal', dot: 'bg-emerald-400', text: 'text-emerald-300' },
+  admin: { label: 'Admin portal', dot: 'bg-indigo-400', text: 'text-indigo-300' },
 }
 
 /**

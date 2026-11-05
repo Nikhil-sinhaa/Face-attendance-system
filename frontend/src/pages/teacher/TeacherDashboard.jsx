@@ -8,6 +8,7 @@ import { DashboardTabNav } from '../../components/dashboard/DashboardTabNav'
 import { TakeAttendanceTab } from '../../components/dashboard/TakeAttendanceTab'
 import { ManageSubjectsTab } from '../../components/dashboard/ManageSubjectsTab'
 import { AttendanceRecordsTab } from '../../components/dashboard/AttendanceRecordsTab'
+import { JoinRequestsTab } from '../../components/dashboard/JoinRequestsTab'
 import { CreateSubjectModal } from '../../components/dialogs/CreateSubjectModal'
 import { ShareSubjectModal } from '../../components/dialogs/ShareSubjectModal'
 import { AddPhotosModal } from '../../components/dialogs/AddPhotosModal'
@@ -42,6 +43,12 @@ export const TeacherDashboard = () => {
   const [loadingRecords, setLoadingRecords] = useState(false)
   const [saveToast, setSaveToast] = useState('')
 
+  // Join requests state
+  const [requests, setRequests] = useState([])
+  const [loadingRequests, setLoadingRequests] = useState(true)
+  const [busyRequestKey, setBusyRequestKey] = useState('')
+  const [requestError, setRequestError] = useState('')
+
   const fetchSubjects = async () => {
     try {
       const data = await subjectService.getSubjects()
@@ -68,9 +75,44 @@ export const TeacherDashboard = () => {
     }
   }
 
+  const fetchRequests = async () => {
+    try {
+      const data = await subjectService.getJoinRequests()
+      setRequests(data)
+    } catch (err) {
+      console.error('Failed to fetch join requests', err)
+    } finally {
+      setLoadingRequests(false)
+    }
+  }
+
+  const handleRequestDecision = async (request, approve) => {
+    const key = `${request.subject_id}-${request.student_id}`
+    setBusyRequestKey(key)
+    setRequestError('')
+    try {
+      if (approve) {
+        await subjectService.approveJoinRequest(request.subject_id, request.student_id)
+      } else {
+        await subjectService.rejectJoinRequest(request.subject_id, request.student_id)
+      }
+      setRequests((prev) => prev.filter((r) => `${r.subject_id}-${r.student_id}` !== key))
+      if (approve) fetchSubjects()
+    } catch (err) {
+      setRequestError(err.response?.data?.detail || 'Could not update this request. Please try again.')
+    } finally {
+      setBusyRequestKey('')
+    }
+  }
+
   useEffect(() => {
     fetchSubjects()
+    fetchRequests()
   }, [])
+
+  useEffect(() => {
+    if (currentTab === 'join_requests') fetchRequests()
+  }, [currentTab])
 
   useEffect(() => {
     if (currentTab === 'attendance_records') {
@@ -159,7 +201,7 @@ export const TeacherDashboard = () => {
         {saveToast && <Notice tone="success">{saveToast}</Notice>}
       </PageHeader>
 
-      <DashboardTabNav currentTab={currentTab} onTabChange={setCurrentTab} />
+      <DashboardTabNav currentTab={currentTab} onTabChange={setCurrentTab} pendingCount={requests.length} />
 
       <div role="tabpanel" id={`panel-${currentTab}`} aria-labelledby={`tab-${currentTab}`} className="rise pt-4" key={currentTab}>
         {currentTab === 'take_attendance' && (
@@ -190,6 +232,19 @@ export const TeacherDashboard = () => {
             }}
             onDeleteSubject={handleDeleteSubject}
           />
+        )}
+
+        {currentTab === 'join_requests' && (
+          <div className="space-y-4">
+            {requestError && <Notice>{requestError}</Notice>}
+            <JoinRequestsTab
+              requests={requests}
+              loading={loadingRequests}
+              busyKey={busyRequestKey}
+              onApprove={(r) => handleRequestDecision(r, true)}
+              onReject={(r) => handleRequestDecision(r, false)}
+            />
+          </div>
         )}
 
         {currentTab === 'attendance_records' && (

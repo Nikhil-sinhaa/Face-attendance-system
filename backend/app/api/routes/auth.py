@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.security import HTTPAuthorizationCredentials
 from typing import Optional
+from backend.app.core.google_auth import verify_college_google_token
 from backend.app.core.security import hash_password, verify_password, create_access_token, revoke_access_token
 from backend.app.schemas.auth import (
     TeacherRegisterRequest,
     TeacherLoginRequest,
+    RegistrationPendingResponse,
     TokenResponse,
     UserPayload,
 )
@@ -15,32 +17,63 @@ from backend.app.api.deps import get_current_user, security
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-@router.post("/teacher/register", response_model=TokenResponse)
+def _student_payload(student: dict) -> UserPayload:
+    return UserPayload(
+        id=student["student_id"],
+        username=None,
+        name=student["name"],
+        role="student",
+        email=student.get("email"),
+        roll_no=student.get("roll_no"),
+        status=student.get("status"),
+    )
+
+
+def _student_token(user_payload: UserPayload) -> TokenResponse:
+    token = create_access_token(
+        data={"sub": str(user_payload.id), "name": user_payload.name, "role": "student"}
+    )
+    return TokenResponse(access_token=token, user=user_payload)
+
+
+@router.post("/teacher/register", response_model=RegistrationPendingResponse)
 def register_teacher(req: TeacherRegisterRequest):
-    existing = teacher_repo.get_teacher_by_username(req.username)
-    if existing:
+    identity = verify_college_google_token(req.google_id_token)
+
+    username = req.username.strip()
+    name = req.name.strip()
+    if len(username) < 3:
+        raise HTTPException(status_code=400, detail="Username must be at least 3 characters.")
+    if len(name) < 2:
+        raise HTTPException(status_code=400, detail="Please enter your full name.")
+
+    if teacher_repo.get_teacher_by_username(username):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already taken. Please choose another.",
         )
-    password_hash = hash_password(req.password)
-    teacher = teacher_repo.create_teacher(req.username, password_hash, req.name)
+    if teacher_repo.get_teacher_by_email(identity["email"]):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A teacher account with this college email already exists.",
+        )
 
-    user_payload = UserPayload(
-        id=teacher["teacher_id"],
-        username=teacher["username"],
-        name=teacher["name"],
-        role="teacher",
+    password_hash = hash_password(req.password)
+    try:
+        teacher_repo.create_teacher(username, password_hash, name, identity["email"])
+    except Exception:
+        # A concurrent request may have won the unique-constraint race.
+        if teacher_repo.get_teacher_by_username(username) or teacher_repo.get_teacher_by_email(identity["email"]):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This username or college email is already registered.",
+            )
+        raise
+
+    return RegistrationPendingResponse(
+        message="Registration submitted. You can sign in once the admin approves your account.",
+        status="pending",
     )
-    token = create_access_token(
-        data={
-            "sub": str(user_payload.id),
-            "username": user_payload.username,
-            "name": user_payload.name,
-            "role": "teacher",
-        }
-    )
-    return TokenResponse(access_token=token, user=user_payload)
 
 
 @router.post("/teacher/login", response_model=TokenResponse)
@@ -51,11 +84,23 @@ def login_teacher(req: TeacherLoginRequest):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password.",
         )
+    if teacher.get("status") == "pending":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account is awaiting admin approval. Please try again later.",
+        )
+    if teacher.get("status") != "approved":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your registration was rejected by the admin.",
+        )
     user_payload = UserPayload(
         id=teacher["teacher_id"],
         username=teacher["username"],
         name=teacher["name"],
         role="teacher",
+        email=teacher.get("email"),
+        status=teacher.get("status"),
     )
     token = create_access_token(
         data={
@@ -87,32 +132,26 @@ async def login_student_face(file: UploadFile = File(...)):
             detail="Face not recognized. You may need to create an account first.",
         )
 
-    user_payload = UserPayload(
-        id=student["student_id"],
-        username=None,
-        name=student["name"],
-        role="student",
-    )
-    token = create_access_token(
-        data={"sub": str(user_payload.id), "name": user_payload.name, "role": "student"}
-    )
-    return TokenResponse(access_token=token, user=user_payload)
+    return _student_token(_student_payload(student))
 
 
 @router.post("/student/register", response_model=TokenResponse)
 async def register_student(
-    student_id: int = Form(...),
-    name: str = Form(...),
+    google_id_token: str = Form(...),
+    name: str = Form(""),
     face_file: UploadFile = File(...),
     voice_file: Optional[UploadFile] = File(None),
 ):
-    name = name.strip()
+    identity = verify_college_google_token(google_id_token)
+
+    name = name.strip() or identity["name"]
     if not name:
         raise HTTPException(status_code=400, detail="Student name is required.")
-    if student_id <= 0:
-        raise HTTPException(status_code=400, detail="Registration number must be a positive whole number.")
-    if student_repo.get_student_by_id(student_id):
-        raise HTTPException(status_code=400, detail="This registration number is already registered.")
+    if student_repo.get_student_by_email(identity["email"]):
+        raise HTTPException(
+            status_code=400,
+            detail="This college email is already registered. Sign in with your face instead.",
+        )
 
     face_bytes = await face_file.read()
     if not face_bytes:
@@ -143,23 +182,24 @@ async def register_student(
         if voice_bytes and len(voice_bytes) > 1000:
             voice_embedding = voice_service.get_voice_embedding(voice_bytes)
 
-    student = student_repo.create_student(
-        student_id=student_id,
-        name=name,
-        face_embedding=face_embedding,
-        voice_embedding=voice_embedding,
-    )
+    try:
+        student = student_repo.create_student(
+            name=name,
+            email=identity["email"],
+            roll_no=identity["roll_no"],
+            face_embedding=face_embedding,
+            voice_embedding=voice_embedding,
+        )
+    except Exception:
+        # A concurrent request may have won the unique-constraint race.
+        if student_repo.get_student_by_email(identity["email"]):
+            raise HTTPException(
+                status_code=400,
+                detail="This college email is already registered. Sign in with your face instead.",
+            )
+        raise
 
-    user_payload = UserPayload(
-        id=student["student_id"],
-        username=None,
-        name=student["name"],
-        role="student",
-    )
-    token = create_access_token(
-        data={"sub": str(user_payload.id), "name": user_payload.name, "role": "student"}
-    )
-    return TokenResponse(access_token=token, user=user_payload)
+    return _student_token(_student_payload(student))
 
 
 @router.get("/me", response_model=UserPayload)
