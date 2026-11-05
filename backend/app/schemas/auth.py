@@ -14,6 +14,10 @@ class TeacherLoginRequest(BaseModel):
     password: str
 
 
+class TeacherGoogleLoginRequest(BaseModel):
+    google_id_token: str = Field(..., min_length=10)
+
+
 class AdminLoginRequest(BaseModel):
     email: str = Field(..., min_length=3, max_length=200)
     password: str = Field(..., min_length=1, max_length=200)

@@ -6,6 +6,7 @@ from backend.app.core.security import hash_password, verify_password, create_acc
 from backend.app.schemas.auth import (
     TeacherRegisterRequest,
     TeacherLoginRequest,
+    TeacherGoogleLoginRequest,
     RegistrationPendingResponse,
     TokenResponse,
     UserPayload,
@@ -32,6 +33,37 @@ def _student_payload(student: dict) -> UserPayload:
 def _student_token(user_payload: UserPayload) -> TokenResponse:
     token = create_access_token(
         data={"sub": str(user_payload.id), "name": user_payload.name, "role": "student"}
+    )
+    return TokenResponse(access_token=token, user=user_payload)
+
+
+def _teacher_session(teacher: dict) -> TokenResponse:
+    """Issue a token for an approved teacher; reject pending/rejected accounts."""
+    if teacher.get("status") == "pending":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account is awaiting admin approval. Please try again later.",
+        )
+    if teacher.get("status") != "approved":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your registration was rejected by the admin.",
+        )
+    user_payload = UserPayload(
+        id=teacher["teacher_id"],
+        username=teacher["username"],
+        name=teacher["name"],
+        role="teacher",
+        email=teacher.get("email"),
+        status=teacher.get("status"),
+    )
+    token = create_access_token(
+        data={
+            "sub": str(user_payload.id),
+            "username": user_payload.username,
+            "name": user_payload.name,
+            "role": "teacher",
+        }
     )
     return TokenResponse(access_token=token, user=user_payload)
 
@@ -84,33 +116,19 @@ def login_teacher(req: TeacherLoginRequest):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password.",
         )
-    if teacher.get("status") == "pending":
+    return _teacher_session(teacher)
+
+
+@router.post("/teacher/google-login", response_model=TokenResponse)
+def login_teacher_google(req: TeacherGoogleLoginRequest):
+    identity = verify_college_google_token(req.google_id_token)
+    teacher = teacher_repo.get_teacher_by_email(identity["email"])
+    if not teacher:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Your account is awaiting admin approval. Please try again later.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No teacher account found for this Google account. Please register first.",
         )
-    if teacher.get("status") != "approved":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Your registration was rejected by the admin.",
-        )
-    user_payload = UserPayload(
-        id=teacher["teacher_id"],
-        username=teacher["username"],
-        name=teacher["name"],
-        role="teacher",
-        email=teacher.get("email"),
-        status=teacher.get("status"),
-    )
-    token = create_access_token(
-        data={
-            "sub": str(user_payload.id),
-            "username": user_payload.username,
-            "name": user_payload.name,
-            "role": "teacher",
-        }
-    )
-    return TokenResponse(access_token=token, user=user_payload)
+    return _teacher_session(teacher)
 
 
 @router.post("/student/face-login", response_model=TokenResponse)

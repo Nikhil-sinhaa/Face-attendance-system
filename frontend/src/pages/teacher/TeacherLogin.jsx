@@ -6,6 +6,7 @@ import { Input } from '../../components/common/Input'
 import { Button } from '../../components/common/Button'
 import { AuthShell } from '../../components/common/AuthShell'
 import { Notice } from '../../components/common/Notice'
+import { CollegeGoogleButton } from '../../components/common/CollegeGoogleButton'
 import { User, Lock, ArrowRight } from 'lucide-react'
 
 export const TeacherLogin = () => {
@@ -37,6 +38,21 @@ export const TeacherLogin = () => {
     }
   }
 
+  const handleGoogle = async (identity) => {
+    if (!identity || loading) return
+    setLoading(true)
+    setError('')
+    try {
+      const data = await authService.loginTeacherGoogle(identity.credential)
+      login(data.access_token, data.user)
+      navigate('/teacher/dashboard')
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Google sign-in failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <AuthShell
       side="teacher"
@@ -54,6 +70,8 @@ export const TeacherLogin = () => {
     >
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {error && <Notice>{error}</Notice>}
+        <CollegeGoogleButton identity={null} onChange={handleGoogle} disabled={loading} />
+        <p className="text-center text-xs text-slate-400">or sign in with username</p>
         <Input
           label="Username"
           id="username"

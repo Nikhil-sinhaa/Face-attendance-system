@@ -17,6 +17,11 @@ export const authService = {
     return res.data
   },
 
+  async loginTeacherGoogle(googleIdToken) {
+    const res = await api.post('/auth/teacher/google-login', { google_id_token: googleIdToken })
+    return res.data
+  },
+
   async loginStudentFace(imageBlob) {
     const form = new FormData()
     form.append('file', imageBlob, 'face.jpg')
