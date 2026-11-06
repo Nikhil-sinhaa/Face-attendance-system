@@ -22,7 +22,7 @@ Make sure you have installed on your computer:
 Open your terminal or command prompt and run:
 
 ```bash
-git clone https://github.com/RamanKumar-Dev/Face-recognition-based-attendance-system.git
+git clone https://github.com/Nikhil-sinhaa/Face-attendance-system.git
 cd Face-recognition-based-attendance-system
 ```
 
